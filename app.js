@@ -32,6 +32,15 @@ let calendarViewMonthIdx = new Date().getMonth();
 // Track last rendered day number for real-time midnight auto-update
 let lastRenderedDayNumber = new Date().getDate();
 
+// Helper: Get local date string YYYY-MM-DD
+function getTodayLocalISOString() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 // Initialize Application, PWA Service Worker, Splash Screen, Back Button Lock & Real-Time Midnight Clock
 document.addEventListener('DOMContentLoaded', () => {
   initSplashScreenHandler();
@@ -557,8 +566,6 @@ function renderStatusBadge(status, dueAmount, renewalDateStr) {
     return `<span class="badge badge-paid">✓ PAID</span>`;
   } else if (status === 'OVERDUE') {
     return `<span class="badge badge-overdue">🔴 OVERDUE ₹${dueAmount}</span>`;
-  } else if (status === 'DUE TODAY') {
-    return `<span class="badge badge-due">⏰ DUE TODAY ₹${dueAmount}</span>`;
   } else {
     return `<span class="badge badge-upcoming">🟡 ACTIVE (Due ${renewalDateStr || ''})</span>`;
   }
@@ -1057,9 +1064,9 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 1: Add Student (Custom In-App Chip Selectors!)
+  // Modal 1: Add Student (Joining Date ALWAYS Defaults to Today's Live Date!)
   else if (activeModal === 'add-student') {
-    const todayDateStr = new Date().toISOString().split('T')[0];
+    const todayDateStr = getTodayLocalISOString();
 
     container.innerHTML = `
       <div class="modal-overlay" onclick="closeModal()">
@@ -1127,7 +1134,7 @@ function renderActiveModal() {
   else if (activeModal === 'add-khata' && profileStudentId) {
     const student = db.getStudentById(profileStudentId);
     if (!student) return;
-    const todayDateStr = new Date().toISOString().split('T')[0];
+    const todayDateStr = getTodayLocalISOString();
 
     container.innerHTML = `
       <div class="modal-overlay" onclick="closeModal()">
@@ -1351,7 +1358,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 6: Student Profile Drawer (Redesigned Ultra Luxury Stepper & Billing Summary)
+  // Modal 6: Student Profile Drawer (With Prominent Joined Date Badge beside Name!)
   else if (activeModal === 'student-profile' && profileStudentId) {
     const fin = db.calculateStudentFinancials(profileStudentId);
     if (!fin) return;
@@ -1365,14 +1372,18 @@ function renderActiveModal() {
       <div class="modal-overlay" onclick="closeModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
           
-          <!-- Top Header Info -->
+          <!-- Top Header Info with Prominent Joined Date Badge -->
           <div class="modal-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="student-avatar" style="width:42px; height:42px; font-size:20px;">${avatar}</span>
               <div>
                 <h3 class="modal-title">${fin.student.name}</h3>
-                <div style="font-size:10px; color:var(--emerald-600);">
-                  ${fin.student.class} ${fin.student.board ? '• ' + fin.student.board : ''} ${fin.student.status !== 'Active' ? '• STATUS: ' + fin.student.status.toUpperCase() : ''}
+                <div style="font-size:10px; color:var(--emerald-600); font-weight:700; display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:2px;">
+                  <span>${fin.student.class} ${fin.student.board ? '• ' + fin.student.board : ''}</span>
+                  <span style="background:rgba(37,75,51,0.12); color:#254B33; border:1px solid rgba(37,75,51,0.25); padding:1px 6px; border-radius:6px; font-weight:800; font-size:9px;">
+                    📅 Joined: ${db.formatDisplayDate(fin.student.joining_date)}
+                  </span>
+                  ${fin.student.status !== 'Active' ? `<span class="badge badge-due" style="font-size:8px;">${fin.student.status.toUpperCase()}</span>` : ''}
                 </div>
               </div>
             </div>
@@ -1710,7 +1721,7 @@ window.triggerDownloadBackupJSON = function() {
   const jsonStr = db.exportBackupJSON();
   const blob = new Blob([jsonStr], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  const dateStr = new Date().toISOString().split('T')[0];
+  const dateStr = getTodayLocalISOString();
 
   const a = document.createElement('a');
   a.href = url;
@@ -1803,12 +1814,14 @@ window.submitClearKhataPayment = function(event) {
 window.handleAddStudentSubmit = function(event) {
   event.preventDefault();
   const form = event.target;
+  const todayStr = getTodayLocalISOString();
+  
   db.addStudent({
     name: form.name.value,
     gender: formGenderState || 'Male',
     class: formClassState || 'Class 10',
     monthly_fee: form.monthly_fee.value,
-    joining_date: form.joining_date.value,
+    joining_date: form.joining_date ? form.joining_date.value : todayStr,
     status: formStatusState || 'Active',
     school: form.school ? form.school.value : '',
     board: formBoardState || 'CBSE'

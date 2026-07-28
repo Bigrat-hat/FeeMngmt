@@ -149,13 +149,14 @@ class DatabaseEngine {
 
   addStudent(studentData) {
     const list = this.getStudents();
+    const todayStr = new Date().toISOString().split('T')[0];
     const newStudent = {
       id: Date.now(),
       name: studentData.name.trim(),
       gender: studentData.gender || 'Male',
       class: studentData.class || 'Class 10',
       monthly_fee: Number(studentData.monthly_fee || 300),
-      joining_date: studentData.joining_date || new Date().toISOString().split('T')[0],
+      joining_date: studentData.joining_date || todayStr,
       status: studentData.status || 'Active',
       school: studentData.school ? studentData.school.trim() : '',
       board: studentData.board || 'CBSE',
@@ -379,7 +380,7 @@ class DatabaseEngine {
       const remainingActiveFee = activeRequiredFee - totalPaidPool;
 
       if (refDayZero < activeEndDayZero) {
-        dueStatus = (refDayZero.getTime() === activeCycleStart.getTime() && totalPaidPool === 0) ? 'DUE TODAY' : 'UPCOMING';
+        dueStatus = 'UPCOMING'; // Active month cycle - fee is due on cycle end date!
         totalCurrentDue = remainingActiveFee;
       } else {
         // Date reached cycle end date -> Overdue!
