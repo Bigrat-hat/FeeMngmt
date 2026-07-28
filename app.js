@@ -22,16 +22,14 @@ document.addEventListener('DOMContentLoaded', () => {
 function initPWA() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').then(reg => {
-      // Check for updates on load
       reg.update();
     }).catch(err => console.log('PWA ServiceWorker registration notice:', err));
 
-    // Auto-Reload when a new code update is deployed!
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!refreshing) {
         refreshing = true;
-        window.location.reload(); // Automatically updates to latest code!
+        window.location.reload();
       }
     });
   }
@@ -100,7 +98,7 @@ function renderCurrentTab() {
   renderActiveModal();
 }
 
-// --- Admin Login Screen (Password Only) ---
+// --- Admin Login Screen (Password Only: anshuu) ---
 function renderAdminLoginView() {
   return `
     <div style="display:flex; flex-direction:column; justify-content:center; min-height:100%; padding:20px 10px;">
@@ -116,11 +114,11 @@ function renderAdminLoginView() {
 
         <form onsubmit="handleAdminLoginSubmit(event)">
           <div class="form-group">
-            <input type="password" id="loginPassword" class="form-control" style="text-align:center; font-size:16px; padding:12px;" value="admin123" required placeholder="••••••••" />
+            <input type="password" id="loginPassword" class="form-control" style="text-align:center; font-size:16px; padding:12px;" value="anshuu" required placeholder="••••••••" />
           </div>
 
           <div id="loginErrorMsg" style="color:var(--status-overdue-text); font-size:11px; font-weight:700; margin-bottom:10px; text-align:center; display:none;">
-            Incorrect Password! (Default: admin123)
+            Incorrect Password!
           </div>
 
           <button type="submit" class="btn-primary" style="width:100%; padding:12px; font-size:14px; margin-top:6px;">
@@ -141,7 +139,7 @@ window.handleAdminLoginSubmit = function(e) {
   e.preventDefault();
   const p = document.getElementById('loginPassword').value;
 
-  if (p.trim() === 'admin123') {
+  if (p.trim() === 'anshuu') {
     isLoggedIn = true;
     localStorage.setItem('anshu_admin_logged_in', 'true');
     renderCurrentTab();
