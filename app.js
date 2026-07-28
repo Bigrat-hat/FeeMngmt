@@ -1246,7 +1246,7 @@ function renderActiveModal() {
               <label class="form-label">Gender *</label>
               <div class="chip-group">
                 <button type="button" class="chip-btn ${formGenderState === 'Male' ? 'active' : ''}" onclick="formGenderState='Male'; openModal('edit-student', ${student.id});">Male 👦</button>
-                <button type="button" class="chip-btn ${formGenderState === 'Female' ? 'active' : ''}" onclick="formGenderState='Female'; openModal('edit-student', ${student.id});">Female 👧</option>
+                <button type="button" class="chip-btn ${formGenderState === 'Female' ? 'active' : ''}" onclick="formGenderState='Female'; openModal('edit-student', ${student.id});">Female 👧</button>
               </div>
             </div>
 
@@ -1351,7 +1351,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 6: Student Profile Drawer (Crystal Clear Coaching Cycle UI with Advance Auto-Fulfillment)
+  // Modal 6: Student Profile Drawer (Redesigned Ultra Luxury Stepper & Billing Summary)
   else if (activeModal === 'student-profile' && profileStudentId) {
     const fin = db.calculateStudentFinancials(profileStudentId);
     if (!fin) return;
@@ -1364,6 +1364,8 @@ function renderActiveModal() {
     container.innerHTML = `
       <div class="modal-overlay" onclick="closeModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
+          
+          <!-- Top Header Info -->
           <div class="modal-header">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="student-avatar" style="width:42px; height:42px; font-size:20px;">${avatar}</span>
@@ -1380,39 +1382,39 @@ function renderActiveModal() {
             </div>
           </div>
 
-          <!-- Total Dues Summary Header Card -->
-          <div class="formula-box" style="margin-top:4px; margin-bottom:8px; ${isOverdue ? 'background:rgba(254,242,242,0.95); border-left-color:#DC2626;' : ''}">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
+          <!-- Unified Hero Billing Dashboard Card -->
+          <div style="padding:14px; background:${isOverdue ? 'linear-gradient(135deg, rgba(254,242,242,0.98), rgba(254,226,226,0.95))' : 'linear-gradient(135deg, rgba(240,247,244,0.98), rgba(228,240,236,0.95))'}; border:1.5px solid ${isOverdue ? 'rgba(220,38,38,0.4)' : 'var(--emerald-800)'}; border-radius:20px; margin-bottom:12px;">
+            
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
               <div>
-                <span style="font-size:10px; color:var(--emerald-600);">Monthly Fee: ₹${fin.student.monthly_fee} • Joined: ${db.formatDisplayDate(fin.student.joining_date)}</span>
-                <div style="font-size:14px; font-weight:800; color:${isOverdue ? '#DC2626' : 'var(--emerald-950)'};">
-                  ${isLeft ? 'Outstanding Left Tuition Dues' : isOverdue ? '🔴 Overdue Pending Tuition Dues' : 'Current Active Month Fee'}
+                <span style="font-size:10px; font-weight:800; color:var(--emerald-600); letter-spacing:0.4px;">TUITION FEE STATUS</span>
+                <div style="font-size:14px; font-weight:800; color:${isOverdue ? '#DC2626' : 'var(--emerald-950)'}; margin-top:1px;">
+                  ${isLeft ? 'Left Tuition Dues' : isOverdue ? '🔴 Overdue Dues' : fin.totalCurrentDue === 0 ? '✓ All Dues Paid' : '🟡 Active Month Dues'}
                 </div>
               </div>
-              <div style="font-size:20px; font-weight:800; color:${isOverdue ? '#DC2626' : fin.totalCurrentDue === 0 ? '#254B33' : 'var(--emerald-950)'};">₹${fin.totalCurrentDue}</div>
+              <div style="text-align:right;">
+                <span style="font-size:22px; font-weight:800; color:${isOverdue ? '#DC2626' : fin.totalCurrentDue === 0 ? '#254B33' : 'var(--emerald-950)'};">₹${fin.totalCurrentDue}</span>
+                <div style="font-size:9px; color:var(--emerald-600); font-weight:700;">Monthly Fee: ₹${fin.student.monthly_fee}</div>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; padding-top:10px; border-top:1px dashed ${isOverdue ? 'rgba(220,38,38,0.3)' : 'var(--card-border)'}; font-size:11px;">
+              <div style="background:rgba(255,255,255,0.7); padding:8px 10px; border-radius:12px;">
+                <span style="color:var(--emerald-600); font-weight:700; font-size:10px;">🗓️ Current Cycle</span>
+                <div style="font-weight:800; color:var(--emerald-950); margin-top:2px; font-size:11px;">${fin.cyclePeriodStr}</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.7); padding:8px 10px; border-radius:12px;">
+                <span style="color:var(--emerald-600); font-weight:700; font-size:10px;">⏰ Next Due Date</span>
+                <div style="font-weight:800; color:${isOverdue ? '#DC2626' : '#254B33'}; margin-top:2px; font-size:11px;">${fin.cycleNextRenewal}</div>
+              </div>
             </div>
 
             ${fin.advanceBalance > 0 ? `
-              <div style="margin-top:6px; padding:6px 10px; background:rgba(37,75,51,0.12); border:1px solid rgba(37,75,51,0.3); border-radius:10px; font-size:10px; color:#254B33; font-weight:800; display:flex; justify-content:space-between; align-items:center;">
-                <span>✨ Advance Credit Pool (Early Payment):</span>
+              <div style="margin-top:8px; padding:6px 10px; background:rgba(37,75,51,0.12); border:1px solid rgba(37,75,51,0.3); border-radius:10px; font-size:10px; color:#254B33; font-weight:800; display:flex; justify-content:space-between; align-items:center;">
+                <span>✨ Advance Credit Balance:</span>
                 <span style="font-size:12px;">₹${fin.advanceBalance}</span>
               </div>
-              <div style="font-size:8px; color:var(--emerald-600); margin-top:2px; font-weight:700;">
-                💡 Automatically debits & fulfills fee as soon as next cycle rolls over!
-              </div>
             ` : ''}
-          </div>
-
-          <!-- Simple, Crystal Clear Coaching Cycle Card -->
-          <div style="padding:10px 12px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:14px; margin-bottom:10px; font-size:11px; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-            <div>
-              <span style="color:var(--emerald-600); font-weight:700;">🗓️ Current Monthly Cycle:</span>
-              <div style="font-weight:800; color:var(--emerald-950); font-size:11px; margin-top:2px;">${fin.cyclePeriodStr}</div>
-            </div>
-            <div>
-              <span style="color:var(--emerald-600); font-weight:700;">⏰ Next Fee Due Date:</span>
-              <div style="font-weight:800; color:${isOverdue ? '#DC2626' : '#254B33'}; font-size:11px; margin-top:2px;">${fin.cycleNextRenewal}</div>
-            </div>
           </div>
 
           <!-- KHATABOOK EXTRA CHARGES LEDGER SECTION (RED FOR UNPAID) -->
@@ -1451,25 +1453,45 @@ function renderActiveModal() {
             </div>
           </div>
 
-          <!-- Section A: Month-by-Month Baseline Audit Breakdown -->
-          <h4 style="font-size:11px; font-weight:800; color:var(--emerald-800); margin-bottom:6px;">Month-by-Month Cycle Breakdown</h4>
-          <div style="max-height:110px; overflow-y:auto; margin-bottom:10px;">
-            ${fin.billingMonths.map(bm => `
-              <div class="month-pending-row">
-                <div>
-                  <strong>Cycle: ${bm.cycleLabel}</strong>
-                  <div style="font-size:9px; color:var(--emerald-600);">Baseline Fee: ₹${bm.baseFee}</div>
-                </div>
-                <div>
-                  ${bm.isPaid ? 
-                    `<span class="badge badge-paid">✓ PAID</span>` : 
-                    isOverdue ? 
-                    `<span class="badge badge-overdue">🔴 PENDING ₹${bm.remainingBalance}</span>` : 
-                    `<span class="badge badge-upcoming" style="font-size:8px;">🟡 ACTIVE MONTH (Due ${fin.cycleNextRenewal})</span>`
-                  }
-                </div>
-              </div>
-            `).join('')}
+          <!-- Section A: Month-by-Month Cycle Stepper Timeline -->
+          <div style="margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <h4 style="font-size:12px; font-weight:800; color:var(--emerald-950);">Month-by-Month Cycle Timeline</h4>
+              <span style="font-size:9px; color:var(--emerald-600); font-weight:700;">Joined: ${db.formatDisplayDate(fin.student.joining_date)}</span>
+            </div>
+
+            <div style="max-height:160px; overflow-y:auto; padding-right:4px;">
+              ${fin.billingMonths.map((bm, index) => {
+                const isLast = index === fin.billingMonths.length - 1;
+                return `
+                  <div style="display:flex; gap:10px; position:relative; padding-bottom:${isLast ? '0' : '8px'};">
+                    <!-- Timeline Vertical Line & Circle -->
+                    <div style="display:flex; flex-direction:column; align-items:center;">
+                      <div style="width:20px; height:20px; border-radius:50%; background:${bm.isPaid ? '#254B33' : isOverdue ? '#DC2626' : '#5E9185'}; color:white; font-size:10px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+                        ${bm.isPaid ? '✓' : isOverdue ? '!' : '●'}
+                      </div>
+                      ${!isLast ? `<div style="width:2px; flex:1; background:${bm.isPaid ? '#254B33' : 'var(--card-border)'}; margin-top:2px;"></div>` : ''}
+                    </div>
+
+                    <!-- Cycle Detail Card -->
+                    <div style="flex:1; background:#FFFFFF; border:1px solid ${bm.isPaid ? 'var(--card-border)' : isOverdue ? 'rgba(220,38,38,0.3)' : 'var(--emerald-800)'}; border-radius:12px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center;">
+                      <div>
+                        <strong style="font-size:11px; color:var(--emerald-950);">${bm.cycleLabel}</strong>
+                        <div style="font-size:9px; color:var(--emerald-600);">Monthly Fee: ₹${bm.baseFee}</div>
+                      </div>
+                      <div>
+                        ${bm.isPaid ? 
+                          `<span class="badge badge-paid" style="font-size:8px;">✓ PAID</span>` : 
+                          isOverdue ? 
+                          `<span class="badge badge-overdue" style="font-size:8px;">🔴 DUE ₹${bm.remainingBalance}</span>` : 
+                          `<span class="badge badge-upcoming" style="font-size:8px;">🟡 ACTIVE MONTH</span>`
+                        }
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
           </div>
 
           <!-- Section B: Payment Transaction & Digital Receipt History (ALWAYS NEWEST FIRST AT TOP!) -->
