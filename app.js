@@ -7,7 +7,8 @@ let searchQuery = '';
 let selectedStudentForCollect = null;
 let profileStudentId = null;
 let editStudentId = null;
-let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'receipt'
+let selectedCalendarDay = null;
+let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'calendar-day', 'receipt'
 let receiptData = null;
 
 // Initialize Application & PWA Service Worker
@@ -50,7 +51,7 @@ function renderCurrentTab() {
   const headerEl = document.querySelector('.app-header');
   if (!contentEl) return;
 
-  // If not logged in, render Admin Login View!
+  // If not logged in, render Password-only Admin Login View
   if (!isLoggedIn) {
     if (navEl) navEl.style.display = 'none';
     if (headerEl) headerEl.style.display = 'none';
@@ -87,43 +88,37 @@ function renderCurrentTab() {
   renderActiveModal();
 }
 
-// --- Admin Login Screen ---
+// --- Admin Login Screen (Password Only) ---
 function renderAdminLoginView() {
   return `
     <div style="display:flex; flex-direction:column; justify-content:center; min-height:100%; padding:20px 10px;">
       
       <div style="text-align:center; margin-bottom:28px;">
-        <div class="brand-icon" style="width:56px; height:56px; font-size:26px; border-radius:16px; margin:0 auto 12px auto; box-shadow:0 10px 24px rgba(38,58,71,0.25);">A</div>
-        <h1 style="font-size:24px; font-weight:800; color:var(--slate-900);">Anshu Coaching</h1>
-        <p style="font-size:12px; color:var(--slate-500); font-weight:600; margin-top:2px;">Admin Portal Authentication</p>
+        <div class="brand-icon" style="width:58px; height:58px; font-size:28px; border-radius:18px; margin:0 auto 12px auto; box-shadow:0 12px 28px rgba(38,58,71,0.25);">A</div>
+        <h1 style="font-size:24px; font-weight:800; color:var(--slate-900);">Anshu Coaching Classes</h1>
+        <p style="font-size:13px; color:var(--slate-500); font-weight:700; margin-top:2px;">Fee Management Portal</p>
       </div>
 
       <div class="glass-card" style="padding:22px; border-radius:24px;">
-        <h3 style="font-size:16px; font-weight:800; color:var(--slate-900); margin-bottom:16px;">Sign In</h3>
+        <h3 style="font-size:15px; font-weight:800; color:var(--slate-900); margin-bottom:14px; text-align:center;">Enter Admin Password</h3>
 
         <form onsubmit="handleAdminLoginSubmit(event)">
           <div class="form-group">
-            <label class="form-label">Username / Email</label>
-            <input type="text" id="loginUsername" class="form-control" value="admin" required placeholder="admin" />
+            <input type="password" id="loginPassword" class="form-control" style="text-align:center; font-size:16px; padding:12px;" value="admin123" required placeholder="••••••••" />
           </div>
 
-          <div class="form-group">
-            <label class="form-label">Password</label>
-            <input type="password" id="loginPassword" class="form-control" value="admin123" required placeholder="••••••••" />
+          <div id="loginErrorMsg" style="color:var(--status-overdue-text); font-size:11px; font-weight:700; margin-bottom:10px; text-align:center; display:none;">
+            Incorrect Password! (Default: admin123)
           </div>
 
-          <div id="loginErrorMsg" style="color:var(--status-overdue-text); font-size:11px; font-weight:700; margin-bottom:10px; display:none;">
-            Invalid username or password!
-          </div>
-
-          <button type="submit" class="btn-primary" style="width:100%; padding:12px; font-size:14px; margin-top:8px;">
-            Sign In ➔
+          <button type="submit" class="btn-primary" style="width:100%; padding:12px; font-size:14px; margin-top:6px;">
+            Log In ➔
           </button>
         </form>
       </div>
 
       <div style="text-align:center; margin-top:20px; font-size:10px; color:var(--slate-500);">
-        Anshu Coaching Fees Blueprint v1.0.0
+        Anshu Coaching Classes Fee Management v1.0.0
       </div>
 
     </div>
@@ -132,10 +127,9 @@ function renderAdminLoginView() {
 
 window.handleAdminLoginSubmit = function(e) {
   e.preventDefault();
-  const u = document.getElementById('loginUsername').value;
   const p = document.getElementById('loginPassword').value;
 
-  if (u.trim() === 'admin' && p.trim() === 'admin123') {
+  if (p.trim() === 'admin123') {
     isLoggedIn = true;
     localStorage.setItem('anshu_admin_logged_in', 'true');
     renderCurrentTab();
@@ -166,6 +160,9 @@ window.openModal = function(modalName, payload = null) {
   if (modalName === 'edit-student' && payload) {
     editStudentId = payload;
   }
+  if (modalName === 'calendar-day' && payload) {
+    selectedCalendarDay = payload;
+  }
   renderActiveModal();
 };
 
@@ -174,6 +171,7 @@ window.closeModal = function() {
   selectedStudentForCollect = null;
   profileStudentId = null;
   editStudentId = null;
+  selectedCalendarDay = null;
   receiptData = null;
   renderActiveModal();
 };
@@ -205,7 +203,7 @@ function renderDashboardView(metrics) {
       <div class="glass-card metric-card-compact clickable-card" onclick="openModal('pending-list')" style="border:1.5px solid rgba(239, 68, 68, 0.4); background:rgba(255,245,245,0.9);">
         <div class="metric-lbl" style="color:var(--status-overdue-text);">PENDING DUES 🔍</div>
         <div class="metric-val" style="color:var(--status-overdue-text)">₹${metrics.totalAggregateDue}</div>
-        <div class="metric-sub" style="font-weight:700; color:var(--status-overdue-text);">${metrics.pendingStudentsCount} Students (Tap to view list)</div>
+        <div class="metric-sub" style="font-weight:700; color:var(--status-overdue-text);">${metrics.pendingStudentsCount} Students (Tap for list)</div>
       </div>
     </div>
 
@@ -269,42 +267,50 @@ function initDashboardCharts() {
   });
 }
 
-// --- 2. Students Directory View ---
+// --- 2. Students Directory View (Active, Left & Session Closed) ---
 function renderStudentsView(students) {
   let filtered = students;
   if (searchQuery) {
     const q = searchQuery.toLowerCase();
-    filtered = filtered.filter(s => s.name.toLowerCase().includes(q) || s.class.toLowerCase().includes(q));
+    filtered = filtered.filter(s => s.name.toLowerCase().includes(q) || s.class.toLowerCase().includes(q) || s.status.toLowerCase().includes(q));
   }
 
   return `
     <!-- Search Pill -->
     <div class="search-pill-wrapper">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-      <input type="text" class="search-pill-input" placeholder="Search student name or class..." value="${searchQuery}" oninput="onStudentSearchInput(event)" />
+      <input type="text" class="search-pill-input" placeholder="Search student name, class, active, left..." value="${searchQuery}" oninput="onStudentSearchInput(event)" />
     </div>
 
-    <p style="font-size:10px; color:var(--slate-500); margin-bottom:8px; text-align:right;">💡 Tap any student to view profile, edit details or delete</p>
+    <p style="font-size:10px; color:var(--slate-500); margin-bottom:8px; text-align:right;">💡 Tap any student to view profile, edit status (Active/Left/Closed) or delete</p>
 
     <!-- Student Cards List -->
     <div>
       ${filtered.map(s => {
         const fin = db.calculateStudentFinancials(s.id);
         const avatar = s.gender === 'Female' ? '👧' : '👦';
+        const isDiscontinued = s.status === 'Left' || s.status === 'Session Closed';
+
         return `
-          <div class="student-card-item" onclick="openModal('student-profile', ${s.id})">
+          <div class="student-card-item" onclick="openModal('student-profile', ${s.id})" style="${isDiscontinued ? 'opacity:0.75; background:rgba(240,244,248,0.7);' : ''}">
             <div style="display:flex; align-items:center; gap:10px;">
               <span class="student-avatar">${avatar}</span>
               <div>
-                <div style="font-size:13px; font-weight:700; color:var(--slate-900);">${s.name}</div>
+                <div style="font-size:13px; font-weight:700; color:var(--slate-900); display:flex; align-items:center; gap:6px;">
+                  ${s.name}
+                  ${s.status === 'Left' ? '<span class="badge badge-due" style="font-size:8px;">LEFT</span>' : ''}
+                  ${s.status === 'Session Closed' ? '<span class="badge badge-closed" style="font-size:8px;">CLOSED</span>' : ''}
+                </div>
                 <div style="font-size:10px; color:var(--slate-500);">${s.class} • ₹${s.monthly_fee}/mo ${s.school ? '• ' + s.school : ''}</div>
               </div>
             </div>
             <div style="text-align:right;">
-              ${renderStatusBadge(fin.dueStatus, fin.totalCurrentDue)}
-              <div style="margin-top:4px;">
-                <button class="btn-secondary" style="padding:4px 8px; font-size:10px;" onclick="event.stopPropagation(); openModal('collect-fee', ${s.id})">Collect</button>
-              </div>
+              ${isDiscontinued ? `<span class="badge badge-closed">${s.status.toUpperCase()}</span>` : renderStatusBadge(fin.dueStatus, fin.totalCurrentDue)}
+              ${!isDiscontinued ? `
+                <div style="margin-top:4px;">
+                  <button class="btn-secondary" style="padding:4px 8px; font-size:10px;" onclick="event.stopPropagation(); openModal('collect-fee', ${s.id})">Collect</button>
+                </div>
+              ` : ''}
             </div>
           </div>
         `;
@@ -446,11 +452,15 @@ window.handleFeeCollection = function(event) {
   openModal('receipt');
 };
 
-// --- 4. Calendar View ---
+// --- 4. Interactive Fee Calendar View ---
 function renderCalendarView(students) {
   return `
     <div class="glass-card">
-      <h3 style="font-size:15px; font-weight:800; color:var(--slate-900); margin-bottom:8px;">July 2026 Fee Calendar</h3>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h3 style="font-size:15px; font-weight:800; color:var(--slate-900);">July 2026 Fee Calendar</h3>
+        <span style="font-size:10px; color:var(--slate-500); font-weight:700;">💡 Tap date to view dues</span>
+      </div>
+
       <div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:4px; font-size:10px; font-weight:800; color:var(--slate-500); text-align:center; margin-bottom:8px;">
         <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
       </div>
@@ -472,7 +482,7 @@ function renderCalendarGridDays(students) {
     const hasDue = dueStudents.length > 0;
 
     gridHTML += `
-      <div style="height:38px; background:${isToday ? 'var(--slate-900)' : hasDue ? 'rgba(180, 197, 219, 0.45)' : 'rgba(255,255,255,0.85)'}; color:${isToday ? 'white' : 'var(--slate-900)'}; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; font-weight:700;">
+      <div class="clickable-card" onclick="openModal('calendar-day', ${day})" style="height:38px; background:${isToday ? 'var(--slate-900)' : hasDue ? 'rgba(180, 197, 219, 0.45)' : 'rgba(255,255,255,0.85)'}; color:${isToday ? 'white' : 'var(--slate-900)'}; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; font-weight:700;">
         <span>${day}</span>
         ${hasDue ? `<span style="width:4px; height:4px; background:${isToday ? '#B4C5DB' : '#059669'}; border-radius:50%; margin-top:2px;"></span>` : ''}
       </div>
@@ -491,7 +501,7 @@ function renderActiveModal() {
     return;
   }
 
-  // Modal 1: Add Student (With Optional School Name & Board Selector)
+  // Modal 1: Add Student
   if (activeModal === 'add-student') {
     container.innerHTML = `
       <div class="modal-overlay" onclick="closeModal()">
@@ -533,7 +543,17 @@ function renderActiveModal() {
               </div>
             </div>
 
-            <!-- Optional School & Board -->
+            <!-- Lifecycle Status Picker -->
+            <div class="form-group">
+              <label class="form-label">Enrollment Lifecycle Status</label>
+              <select name="status" class="form-control">
+                <option value="Active" selected>Active (Currently Enrolled)</option>
+                <option value="Left">Left (Discontinued Coaching)</option>
+                <option value="Session Closed">Session Closed (Completed Year)</option>
+              </select>
+            </div>
+
+            <!-- Optional School Name & Board -->
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
               <div class="form-group">
                 <label class="form-label">School Name (Optional)</label>
@@ -558,7 +578,7 @@ function renderActiveModal() {
     `;
   } 
 
-  // Modal 2: Edit Student Modal (With Optional School & Board)
+  // Modal 2: Edit Student Modal (Including Status: Active / Left / Session Closed)
   else if (activeModal === 'edit-student' && editStudentId) {
     const student = db.getStudentById(editStudentId);
     if (!student) return;
@@ -607,11 +627,21 @@ function renderActiveModal() {
               </div>
             </div>
 
-            <!-- Optional School Name & Board -->
+            <!-- Enrollment Lifecycle Status -->
+            <div class="form-group">
+              <label class="form-label">Enrollment Status</label>
+              <select name="status" class="form-control">
+                <option value="Active" ${student.status === 'Active' ? 'selected' : ''}>Active (Enrolled)</option>
+                <option value="Left" ${student.status === 'Left' ? 'selected' : ''}>Left (Discontinued Coaching)</option>
+                <option value="Session Closed" ${student.status === 'Session Closed' ? 'selected' : ''}>Session Closed (Completed Year)</option>
+              </select>
+            </div>
+
+            <!-- Optional School & Board -->
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
               <div class="form-group">
                 <label class="form-label">School Name (Optional)</label>
-                <input type="text" name="school" class="form-control" value="${student.school || ''}" placeholder="e.g. DPS" />
+                <input type="text" name="school" class="form-control" value="${student.school || ''}" />
               </div>
               <div class="form-group">
                 <label class="form-label">Board (Optional)</label>
@@ -635,11 +665,12 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 3: Student Profile & Month-wise Pending Dues Bottom Sheet
+  // Modal 3: Student Profile Drawer
   else if (activeModal === 'student-profile' && profileStudentId) {
     const fin = db.calculateStudentFinancials(profileStudentId);
     if (!fin) return;
     const avatar = fin.student.gender === 'Female' ? '👧' : '👦';
+    const isDiscontinued = fin.student.status === 'Left' || fin.student.status === 'Session Closed';
 
     container.innerHTML = `
       <div class="modal-overlay" onclick="closeModal()">
@@ -649,7 +680,9 @@ function renderActiveModal() {
               <span class="student-avatar" style="width:42px; height:42px; font-size:20px;">${avatar}</span>
               <div>
                 <h3 class="modal-title">${fin.student.name}</h3>
-                <div style="font-size:10px; color:var(--slate-500);">${fin.student.class} ${fin.student.board ? '• ' + fin.student.board : ''} ${fin.student.school ? '• ' + fin.student.school : ''}</div>
+                <div style="font-size:10px; color:var(--slate-500);">
+                  ${fin.student.class} ${fin.student.status !== 'Active' ? '• ' + fin.student.status : ''}
+                </div>
               </div>
             </div>
             <div style="display:flex; gap:6px;">
@@ -688,11 +721,13 @@ function renderActiveModal() {
           </div>
 
           <div style="display:flex; gap:8px;">
-            <button class="btn-primary" style="flex:1; padding:10px;" onclick="closeModal(); switchTab('collect'); onStudentSelectForCollect(${fin.student.id});">
-              💳 Collect Fee
-            </button>
+            ${!isDiscontinued ? `
+              <button class="btn-primary" style="flex:1; padding:10px;" onclick="closeModal(); switchTab('collect'); onStudentSelectForCollect(${fin.student.id});">
+                💳 Collect Fee
+              </button>
+            ` : ''}
             <button class="btn-secondary" style="border-color:var(--status-overdue-text); color:var(--status-overdue-text); padding:10px;" onclick="handleDeleteStudent(${fin.student.id})">
-              🗑️ Delete
+              🗑️ Delete Student
             </button>
           </div>
         </div>
@@ -700,7 +735,55 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 4: Dashboard "PENDING DUES" Tap List
+  // Modal 4: Calendar Day Details Bottom Sheet
+  else if (activeModal === 'calendar-day' && selectedCalendarDay) {
+    const students = db.getStudents();
+    const dueStudents = students.filter(s => s.status === 'Active' && new Date(s.joining_date).getDate() === selectedCalendarDay);
+
+    container.innerHTML = `
+      <div class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+          <div class="modal-header">
+            <div>
+              <h3 class="modal-title">July ${selectedCalendarDay}, 2026 - Dues Timeline</h3>
+              <div style="font-size:10px; color:var(--slate-500); font-weight:700;">
+                ${dueStudents.length} Student(s) with monthly fee baseline on the ${selectedCalendarDay}th
+              </div>
+            </div>
+            <button class="close-btn" onclick="closeModal()">✕</button>
+          </div>
+
+          <div style="max-height:240px; overflow-y:auto; margin-bottom:14px;">
+            ${dueStudents.length > 0 ? dueStudents.map(s => {
+              const fin = db.calculateStudentFinancials(s.id);
+              return `
+                <div class="student-card-item" onclick="closeModal(); openModal('student-profile', ${s.id});" style="margin-bottom:8px;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="student-avatar">${s.gender === 'Female' ? '👧' : '👦'}</span>
+                    <div>
+                      <div style="font-size:12px; font-weight:700; color:var(--slate-900);">${s.name}</div>
+                      <div style="font-size:10px; color:var(--slate-500);">${s.class} • Monthly Fee: ₹${s.monthly_fee}</div>
+                    </div>
+                  </div>
+                  <div style="text-align:right;">
+                    ${renderStatusBadge(fin.dueStatus, fin.totalCurrentDue)}
+                  </div>
+                </div>
+              `;
+            }).join('') : `
+              <div style="text-align:center; padding:30px 10px; color:var(--slate-500); font-size:12px;">
+                No recurring student dues scheduled on July ${selectedCalendarDay}.
+              </div>
+            `}
+          </div>
+
+          <button class="btn-secondary" style="width:100%; padding:10px;" onclick="closeModal()">Close Timeline</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // Modal 5: Dashboard Pending Dues List
   else if (activeModal === 'pending-list') {
     const metrics = db.getDashboardMetrics();
     container.innerHTML = `
@@ -740,7 +823,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 5: Payment Receipt Sheet
+  // Modal 6: Receipt Sheet
   else if (activeModal === 'receipt' && receiptData) {
     container.innerHTML = `
       <div class="modal-overlay" onclick="closeModal()">
@@ -750,7 +833,7 @@ function renderActiveModal() {
             <button class="close-btn" onclick="closeModal()">✕</button>
           </div>
           <div style="border:1px dashed var(--slate-300); border-radius:14px; padding:14px; font-size:11px;">
-            <div style="text-align:center; font-weight:800; font-size:13px; margin-bottom:8px; color:var(--slate-900);">ANSHU COACHING INSTITUTE</div>
+            <div style="text-align:center; font-weight:800; font-size:13px; margin-bottom:8px; color:var(--slate-900);">ANSHU COACHING CLASSES</div>
             <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
               <span>Student:</span><strong>${receiptData.student.name}</strong>
             </div>
@@ -780,6 +863,7 @@ window.handleAddStudentSubmit = function(event) {
     class: form.class.value,
     monthly_fee: form.monthly_fee.value,
     joining_date: form.joining_date.value,
+    status: form.status ? form.status.value : 'Active',
     school: form.school ? form.school.value : '',
     board: form.board ? form.board.value : ''
   });
@@ -796,6 +880,7 @@ window.handleEditStudentSubmit = function(event) {
     class: form.class.value,
     monthly_fee: form.monthly_fee.value,
     joining_date: form.joining_date.value,
+    status: form.status ? form.status.value : 'Active',
     school: form.school ? form.school.value : '',
     board: form.board ? form.board.value : ''
   });
@@ -803,7 +888,6 @@ window.handleEditStudentSubmit = function(event) {
   renderCurrentTab();
 };
 
-// Delete Student with Warning Confirmation Alert
 window.handleDeleteStudent = function(studentId) {
   const student = db.getStudentById(studentId);
   if (!student) return;
