@@ -23,14 +23,28 @@ let calendarViewMonthIdx = new Date().getMonth();
 // Track last rendered day number for real-time midnight auto-update
 let lastRenderedDayNumber = new Date().getDate();
 
-// Initialize Application, PWA Service Worker, Back Button Lock & Real-Time Midnight Clock
+// Initialize Application, PWA Service Worker, Splash Screen, Back Button Lock & Real-Time Midnight Clock
 document.addEventListener('DOMContentLoaded', () => {
+  initSplashScreenHandler();
   initHistoryLock();
   renderCurrentTab();
   updateNavActiveState();
   initPWA();
   initMidnightRealtimeClock();
 });
+
+// Ultra Premium Splash Screen Auto-Dismiss Transition Handler
+function initSplashScreenHandler() {
+  const splashEl = document.getElementById('appSplashScreen');
+  if (splashEl) {
+    setTimeout(() => {
+      splashEl.classList.add('fade-out');
+      setTimeout(() => {
+        splashEl.style.display = 'none';
+      }, 500);
+    }, 1300);
+  }
+}
 
 // Custom In-App Alert System
 window.showAppAlert = function(title, message) {

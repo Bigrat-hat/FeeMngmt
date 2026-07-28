@@ -1,21 +1,24 @@
 {
-  "short_name": "AnshuCoaching",
-  "name": "Anshu Coaching Classes",
+  "short_name": "Anshu Coaching",
+  "name": "Anshu Coaching Classes - VIP Fee Portal",
   "icons": [
     {
       "src": "icon-192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
       "src": "icon-512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
   "start_url": "./index.html",
-  "background_color": "#F0F7F4",
-  "theme_color": "#254B33",
+  "background_color": "#06271A",
+  "theme_color": "#06271A",
   "display": "standalone",
+  "display_override": ["standalone", "fullscreen"],
   "orientation": "portrait"
 }
