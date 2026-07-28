@@ -51,21 +51,14 @@
         </div>
       </div>
 
-      <!-- Header Bar (With Live Date Badge, VIP Long-Press Logo Feature, + Student & Exit Button) -->
+      <!-- Header Bar (With Live Date Badge, + Student & Exit Button) -->
       <header class="app-header">
-        <div class="brand-badge clickable-card" 
-             onmousedown="handleLogoPressStart()" 
-             onmouseup="handleLogoPressEnd()" 
-             onmouseleave="handleLogoPressEnd()" 
-             ontouchstart="handleLogoPressStart()" 
-             ontouchend="handleLogoPressEnd()" 
-             onclick="handleLogoClick()"
-             title="Hold for VIP Executive Suite">
+        <div class="brand-badge">
           <img src="logo.png" class="brand-logo-img" alt="Anshu Coaching Emblem" />
           <div>
             <h1 class="brand-title">Anshu Coaching Classes</h1>
             <div class="brand-subtitle">
-              <span>VIP Portal ✨</span>
+              <span>VIP Portal</span>
               <span id="liveHeaderDateBadge" class="live-date-header-badge">📅 Today</span>
             </div>
           </div>
@@ -86,7 +79,7 @@
           Dashboard
         </button>
         <button class="nav-item" onclick="switchTab('students')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           Students
         </button>
         <button class="nav-item" onclick="switchTab('collect')">

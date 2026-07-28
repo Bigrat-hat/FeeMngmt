@@ -12,7 +12,7 @@ let profileStudentId = null;
 let editStudentId = null;
 let selectedCalendarDay = new Date().getDate(); // Defaults to live Today!
 let selectedBoardForList = null;
-let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'board-list', 'calendar-day', 'receipt', 'add-khata', 'backup-restore', 'clear-khata-modal', 'custom-alert-modal', 'select-student-picker', 'select-month-picker', 'vip-executive-center'
+let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'board-list', 'calendar-day', 'receipt', 'add-khata', 'backup-restore', 'clear-khata-modal', 'custom-alert-modal', 'select-student-picker', 'select-month-picker'
 let receiptData = null;
 
 // Temporary Form State for Chip Toggles
@@ -32,10 +32,6 @@ let calendarViewMonthIdx = new Date().getMonth();
 // Track last rendered day number for real-time midnight auto-update
 let lastRenderedDayNumber = new Date().getDate();
 
-// VIP Secret Long-Press Logo Timer
-let logoPressTimer = null;
-let isLongPressTriggered = false;
-
 // Initialize Application, PWA Service Worker, Splash Screen, Back Button Lock & Real-Time Midnight Clock
 document.addEventListener('DOMContentLoaded', () => {
   initSplashScreenHandler();
@@ -46,31 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initPWA();
   initMidnightRealtimeClock();
 });
-
-// VIP Long-Press Logo Handlers
-window.handleLogoPressStart = function() {
-  isLongPressTriggered = false;
-  logoPressTimer = setTimeout(() => {
-    isLongPressTriggered = true;
-    if (navigator.vibrate) {
-      try { navigator.vibrate([60, 40, 80]); } catch (e) {}
-    }
-    openModal('vip-executive-center');
-  }, 550); // 550ms long press!
-};
-
-window.handleLogoPressEnd = function() {
-  if (logoPressTimer) {
-    clearTimeout(logoPressTimer);
-    logoPressTimer = null;
-  }
-};
-
-window.handleLogoClick = function() {
-  if (!isLongPressTriggered) {
-    showAppAlert('👑 Secret VIP Feature Tip', '💡 Press & HOLD (Long-Press) the Top Logo for 1 second to unlock the Secret VIP Executive Suite & WhatsApp Dues Broadcaster! ✨');
-  }
-};
 
 // Live Date Header Badge Update Function (Updates daily at 12 midnight!)
 function updateHeaderLiveDate() {
@@ -445,14 +416,12 @@ function renderDashboardView(metrics) {
       </button>
     </div>
 
-    <!-- Secret Long-Press Logo Hint Banner -->
-    <div class="formula-box" style="background:rgba(37,75,51,0.08); border-left-color:var(--emerald-800); cursor:pointer;" onclick="openModal('vip-executive-center')">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div>
-          <div class="formula-title">👑 VIP Executive Suite & WhatsApp Broadcaster</div>
-          <div class="formula-text">Hold (Long-Press) top header logo to unlock VIP Command Center!</div>
-        </div>
-        <span style="font-size:14px;">✨</span>
+    <!-- Live Date Rollover & Advance Fulfillment Rule Highlight -->
+    <div class="formula-box">
+      <div class="formula-title">✨ Smart Live Cycle Rollover & Advance Credit Rule</div>
+      <div class="formula-text">
+        1. Monthly cycles automatically progress based on live current date.<br/>
+        2. Early/advance payments go into <strong>Advance Credit</strong> and automatically debit to fulfill fee as soon as next cycle rolls over!
       </div>
     </div>
 
@@ -947,110 +916,8 @@ function renderActiveModal() {
     return;
   }
 
-  // SECRET VIP EXECUTIVE COMMAND CENTER MODAL SHEET (Unlocked via Long-Press on Header Logo!)
-  if (activeModal === 'vip-executive-center') {
-    const metrics = db.getDashboardMetrics();
-    const students = db.getStudents();
-    const overdueStudents = students.map(s => ({
-      student: s,
-      fin: db.calculateStudentFinancials(s.id)
-    })).filter(item => item.fin.dueStatus === 'OVERDUE' && item.fin.totalCurrentDue > 0);
-
-    const starStudents = students.filter(s => {
-      const fin = db.calculateStudentFinancials(s.id);
-      return fin.dueStatus === 'PAID' && fin.totalCurrentDue === 0;
-    });
-
-    container.innerHTML = `
-      <div class="modal-overlay" onclick="closeModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-          <div class="modal-header">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <img src="logo.png" style="width:34px; height:34px; border-radius:50%; border:2px solid var(--emerald-800);" />
-              <div>
-                <h3 class="modal-title">👑 VIP Executive Suite</h3>
-                <div style="font-size:9px; color:var(--emerald-600); font-weight:800;">Anshu Coaching Admin Command Center</div>
-              </div>
-            </div>
-            <button class="close-btn" onclick="closeModal()">✕</button>
-          </div>
-
-          <!-- VIP Status Card -->
-          <div class="formula-box" style="background:var(--vip-gradient-primary); color:#FFFFFF; border:none; margin-bottom:12px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <div>
-                <span style="font-size:10px; color:var(--emerald-200); font-weight:700;">INSTITUTE STATUS</span>
-                <div style="font-size:15px; font-weight:800; color:#FFFFFF;">Platinum VIP Institute Status 🌟</div>
-              </div>
-              <span style="font-size:24px;">🏆</span>
-            </div>
-            <div style="font-size:10px; color:var(--emerald-200); margin-top:4px;">
-              Collection Efficiency: <strong>${metrics.totalStudents > 0 ? Math.round(((metrics.activeStudents - metrics.pendingStudentsCount) / metrics.activeStudents) * 100) : 100}% Paid</strong>
-            </div>
-          </div>
-
-          <!-- Section 1: 1-Tap WhatsApp Parent Dues Broadcaster -->
-          <div style="padding:10px; background:rgba(37,75,51,0.06); border:1px solid var(--card-border); border-radius:14px; margin-bottom:12px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <strong style="font-size:12px; color:var(--emerald-950);">📲 1-Tap WhatsApp Dues Broadcaster</strong>
-              <span style="font-size:9px; color:var(--status-overdue-text); font-weight:800;">${overdueStudents.length} Overdue</span>
-            </div>
-            <div style="max-height:120px; overflow-y:auto;">
-              ${overdueStudents.length > 0 ? overdueStudents.map(item => {
-                const s = item.student;
-                const dueAmt = item.fin.totalCurrentDue;
-                const msg = encodeURIComponent(`Namaste! Anshu Coaching Classes se reminder: Aapke bachhe ${s.name} (${s.class}) ki monthly fee ₹${dueAmt} pending hai. Kripya samay par jama karein. Dhanyawad!`);
-                const waUrl = `https://wa.me/?text=${msg}`;
-
-                return `
-                  <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; background:#FFFFFF; border:1px solid var(--card-border); border-radius:10px; margin-bottom:4px; font-size:10px;">
-                    <div>
-                      <strong style="color:var(--emerald-950);">${s.name}</strong> (${s.class})
-                      <div style="font-size:9px; color:#DC2626; font-weight:700;">Overdue Fee: ₹${dueAmt}</div>
-                    </div>
-                    <a href="${waUrl}" target="_blank" class="btn-primary" style="padding:4px 8px; font-size:9px; text-decoration:none; background:#25D366; border-color:#25D366;">
-                      📲 WhatsApp
-                    </a>
-                  </div>
-                `;
-              }).join('') : `
-                <div style="text-align:center; padding:8px; color:var(--emerald-600); font-size:10px;">🎉 Great news! All enrolled students have paid their fees!</div>
-              `}
-            </div>
-          </div>
-
-          <!-- Section 2: Star Regular Payee Students (Honor Roll) -->
-          <div style="padding:10px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:14px; margin-bottom:12px;">
-            <strong style="font-size:12px; color:var(--emerald-950); display:block; margin-bottom:4px;">⭐ Star Payee Students (${starStudents.length})</strong>
-            <div style="max-height:90px; overflow-y:auto;">
-              ${starStudents.length > 0 ? starStudents.map(s => `
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:4px 6px; font-size:10px;">
-                  <span style="color:var(--emerald-950); font-weight:700;">${s.name} (${s.class})</span>
-                  <span class="badge badge-paid" style="font-size:8px;">✓ 100% On-Time</span>
-                </div>
-              `).join('') : `
-                <div style="text-align:center; padding:6px; color:var(--emerald-600); font-size:10px;">No zero-dues students yet.</div>
-              `}
-            </div>
-          </div>
-
-          <!-- Executive Action Buttons -->
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-            <button class="btn-primary" style="padding:8px; font-size:10px;" onclick="closeModal(); triggerDownloadBackupJSON();">
-              📥 1-Tap Backup (.json)
-            </button>
-            <button class="btn-secondary" style="padding:8px; font-size:10px;" onclick="closeModal(); openModal('backup-restore');">
-              📤 Restore Data
-            </button>
-          </div>
-
-        </div>
-      </div>
-    `;
-  }
-
   // Modal: Custom Glassmorphic In-App Alert / Confirm Sheet
-  else if (activeModal === 'custom-alert-modal' && customAlertState) {
+  if (activeModal === 'custom-alert-modal' && customAlertState) {
     container.innerHTML = `
       <div class="modal-overlay" onclick="closeModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
@@ -1379,7 +1246,7 @@ function renderActiveModal() {
               <label class="form-label">Gender *</label>
               <div class="chip-group">
                 <button type="button" class="chip-btn ${formGenderState === 'Male' ? 'active' : ''}" onclick="formGenderState='Male'; openModal('edit-student', ${student.id});">Male 👦</button>
-                <button type="button" class="chip-btn ${formGenderState === 'Female' ? 'active' : ''}" onclick="formGenderState='Female'; openModal('edit-student', ${student.id});">Female 👧</button>
+                <button type="button" class="chip-btn ${formGenderState === 'Female' ? 'active' : ''}" onclick="formGenderState='Female'; openModal('edit-student', ${student.id});">Female 👧</option>
               </div>
             </div>
 
