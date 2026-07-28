@@ -1,51 +1,46 @@
-/* Anshu Coaching Classes - VIP Emerald & Canva Slate Ultra-Advanced Design System */
+/* Anshu Coaching Classes - VIP Botanical Emerald LIGHT Theme Design System */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* VIP Emerald Color Palette from Uploaded Image */
-  --emerald-950: #06271A; /* Deepest Forest Emerald Dark Background */
-  --emerald-800: #254B33; /* Rich Deep Emerald Green */
-  --emerald-600: #5E9185; /* Muted Jade Teal */
-  --emerald-400: #9CCCC0; /* Luminous Sage Mint */
-  --emerald-200: #B5D8C7; /* Soft Light Mint Aqua */
+  /* VIP Botanical Palette Colors from User Image */
+  --emerald-950: #06271A; /* Deepest Emerald for Text & Accents */
+  --emerald-800: #254B33; /* Rich Deep Emerald */
+  --emerald-600: #5E9185; /* Jade Teal */
+  --emerald-400: #9CCCC0; /* Sage Mint */
+  --emerald-200: #B5D8C7; /* Soft Light Mint */
+  --emerald-50:  #F0F7F4; /* Ultra Light Mint Surface */
 
-  /* Canva Slate Complements */
-  --slate-900: #263A47;
-  --slate-700: #4A5B6A;
-  --slate-500: #728495;
-  --slate-300: #98A9BE;
+  /* Surface & Canvas (LIGHT THEME) */
+  --bg-deep: #E4F0EC;
+  --bg-canvas: #F0F7F4;
+  --card-bg: rgba(255, 255, 255, 0.92);
+  --card-bg-hover: #FFFFFF;
+  --card-border: rgba(94, 145, 133, 0.25);
+  --card-border-glow: rgba(37, 75, 51, 0.35);
 
-  /* Surface & Canvas */
-  --bg-deep: #03140D;
-  --bg-canvas: #06271A;
-  --card-bg: rgba(37, 75, 51, 0.65);
-  --card-bg-hover: rgba(37, 75, 51, 0.88);
-  --card-border: rgba(181, 216, 199, 0.25);
-  --card-border-glow: rgba(156, 204, 192, 0.45);
+  --text-main: #06271A;   /* High Contrast Deep Emerald Text */
+  --text-muted: #254B33;  /* Medium Emerald Text */
+  --text-dim: #5E9185;    /* Muted Jade Text */
 
-  --text-main: #F8FAFC;
-  --text-muted: #B5D8C7;
-  --text-dim: #9CCCC0;
-
-  /* VIP Gradients */
-  --vip-gradient-primary: linear-gradient(135deg, #254B33 0%, #5E9185 50%, #9CCCC0 100%);
+  /* VIP Light Gradients */
+  --vip-gradient-primary: linear-gradient(135deg, #254B33 0%, #06271A 100%);
   --vip-gradient-button: linear-gradient(135deg, #254B33 0%, #5E9185 100%);
-  --vip-gradient-card: linear-gradient(135deg, rgba(37, 75, 51, 0.75) 0%, rgba(6, 39, 26, 0.92) 100%);
-  --vip-gradient-header: linear-gradient(135deg, rgba(6, 39, 26, 0.95) 0%, rgba(38, 58, 71, 0.95) 100%);
+  --vip-gradient-card: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 247, 244, 0.95) 100%);
+  --vip-gradient-header: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 247, 244, 0.95) 100%);
 
   /* Status Colors */
-  --status-paid-bg: rgba(156, 204, 192, 0.18);
-  --status-paid-text: #B5D8C7;
-  --status-paid-border: rgba(181, 216, 199, 0.4);
+  --status-paid-bg: rgba(37, 75, 51, 0.12);
+  --status-paid-text: #254B33;
+  --status-paid-border: rgba(37, 75, 51, 0.3);
 
-  --status-due-bg: rgba(245, 158, 11, 0.18);
-  --status-due-text: #FBBF24;
-  --status-due-border: rgba(251, 191, 36, 0.4);
+  --status-due-bg: rgba(217, 119, 6, 0.12);
+  --status-due-text: #D97706;
+  --status-due-border: rgba(217, 119, 6, 0.3);
 
-  --status-overdue-bg: rgba(239, 68, 68, 0.2);
-  --status-overdue-text: #F87171;
-  --status-overdue-border: rgba(248, 113, 113, 0.45);
+  --status-overdue-bg: rgba(220, 38, 38, 0.12);
+  --status-overdue-text: #DC2626;
+  --status-overdue-border: rgba(220, 38, 38, 0.3);
 
   --radius-pill: 9999px;
   --radius-card: 22px;
@@ -69,8 +64,8 @@ html, body {
   overflow: hidden;
   background-color: var(--bg-deep);
   background-image: 
-    radial-gradient(circle at 12% 12%, rgba(156, 204, 192, 0.15) 0%, transparent 45%),
-    radial-gradient(circle at 88% 88%, rgba(37, 75, 51, 0.35) 0%, transparent 45%);
+    radial-gradient(circle at 10% 10%, rgba(181, 216, 199, 0.45) 0%, transparent 45%),
+    radial-gradient(circle at 90% 90%, rgba(156, 204, 192, 0.35) 0%, transparent 45%);
   user-select: none;
   color: var(--text-main);
 }
@@ -90,10 +85,10 @@ html, body {
   max-width: 440px;
   height: 100%;
   max-height: 880px;
-  background: var(--emerald-950);
+  background: var(--bg-canvas);
   border-radius: 36px;
-  border: 1px solid rgba(181, 216, 199, 0.3);
-  box-shadow: 0 25px 70px -15px rgba(0, 0, 0, 0.75), 0 0 35px 0 rgba(156, 204, 192, 0.15);
+  border: 4px solid var(--emerald-800);
+  box-shadow: 0 25px 70px -15px rgba(6, 39, 26, 0.35);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -125,28 +120,27 @@ html, body {
   width: 38px;
   height: 38px;
   background: var(--vip-gradient-primary);
-  color: #06271A;
-  border: 1px solid rgba(181, 216, 199, 0.5);
+  color: white;
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
   font-size: 19px;
-  box-shadow: 0 4px 16px rgba(156, 204, 192, 0.35);
+  box-shadow: 0 4px 14px rgba(37, 75, 51, 0.3);
 }
 
 .brand-title {
   font-size: 15px;
   font-weight: 800;
-  color: var(--text-main);
+  color: var(--emerald-950);
   line-height: 1.1;
   letter-spacing: -0.2px;
 }
 
 .brand-subtitle {
   font-size: 10px;
-  color: var(--emerald-400);
+  color: var(--emerald-600);
   font-weight: 700;
   letter-spacing: 0.4px;
 }
@@ -177,12 +171,12 @@ html, body {
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(181, 216, 199, 0.3);
+  border: 1px solid rgba(181, 216, 199, 0.4);
   padding: 4px;
   display: flex;
   align-items: center;
   justify-content: space-around;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 16px 40px rgba(6, 39, 26, 0.4);
   z-index: 50;
 }
 
@@ -196,7 +190,7 @@ html, body {
   border-radius: var(--radius-pill);
   background: transparent;
   border: none;
-  color: var(--emerald-300, #9CCCC0);
+  color: var(--emerald-200);
   font-size: 9px;
   font-weight: 700;
   cursor: pointer;
@@ -206,10 +200,10 @@ html, body {
 }
 
 .nav-item.active {
-  background: var(--vip-gradient-primary);
-  color: #06271A;
+  background: white;
+  color: var(--emerald-950);
   font-weight: 800;
-  box-shadow: 0 6px 16px rgba(156, 204, 192, 0.35);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .nav-item svg {
@@ -219,11 +213,11 @@ html, body {
 
 /* VIP Metallic Glass Cards */
 .glass-card {
-  background: var(--vip-gradient-card);
+  background: var(--card-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--card-border);
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 8px 24px rgba(37, 75, 51, 0.08);
   border-radius: var(--radius-card);
   padding: 16px;
   margin-bottom: 12px;
@@ -255,20 +249,20 @@ html, body {
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.6px;
-  color: var(--emerald-400);
+  color: var(--emerald-600);
   text-transform: uppercase;
 }
 
 .metric-val {
   font-size: 21px;
   font-weight: 800;
-  color: var(--text-main);
+  color: var(--emerald-950);
   margin-top: 4px;
 }
 
 .metric-sub {
   font-size: 10px;
-  color: var(--emerald-200);
+  color: var(--emerald-600);
   margin-top: 2px;
 }
 
@@ -302,18 +296,18 @@ html, body {
 }
 
 .badge-closed {
-  background: rgba(148, 163, 184, 0.15);
-  color: #CBD5E1;
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: rgba(114, 132, 149, 0.15);
+  color: #4A5B6A;
+  border: 1px solid rgba(114, 132, 149, 0.3);
 }
 
 /* Action Buttons */
 .btn-primary {
   background: var(--vip-gradient-primary);
-  color: #06271A;
+  color: white;
   padding: 12px 20px;
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(181, 216, 199, 0.5);
+  border: none;
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
@@ -321,7 +315,7 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  box-shadow: 0 6px 20px rgba(156, 204, 192, 0.35);
+  box-shadow: 0 6px 20px rgba(37, 75, 51, 0.25);
   transition: var(--transition-smooth);
 }
 
@@ -330,11 +324,11 @@ html, body {
 }
 
 .btn-secondary {
-  background: rgba(37, 75, 51, 0.7);
-  color: var(--text-main);
+  background: var(--emerald-200);
+  color: var(--emerald-950);
   padding: 7px 14px;
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(181, 216, 199, 0.3);
+  border: 1px solid rgba(94, 145, 133, 0.3);
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
@@ -350,17 +344,17 @@ html, body {
   width: 100%;
   padding: 11px 14px 11px 38px;
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(181, 216, 199, 0.3);
-  background: rgba(6, 39, 26, 0.85);
+  border: 1px solid var(--card-border);
+  background: rgba(255, 255, 255, 0.95);
   font-size: 12px;
-  color: var(--text-main);
+  color: var(--emerald-950);
   outline: none;
   transition: var(--transition-smooth);
 }
 
 .search-pill-input:focus {
-  border-color: var(--emerald-400);
-  box-shadow: 0 0 14px rgba(156, 204, 192, 0.35);
+  border-color: var(--emerald-800);
+  box-shadow: 0 0 14px rgba(37, 75, 51, 0.2);
 }
 
 .search-pill-wrapper {
@@ -373,7 +367,7 @@ html, body {
   left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--emerald-400);
+  color: var(--emerald-600);
 }
 
 /* Student Row Card */
@@ -382,7 +376,7 @@ html, body {
   align-items: center;
   justify-content: space-between;
   padding: 12px 14px;
-  background: var(--vip-gradient-card);
+  background: rgba(255, 255, 255, 0.92);
   border-radius: 18px;
   margin-bottom: 8px;
   border: 1px solid var(--card-border);
@@ -392,15 +386,15 @@ html, body {
 
 .student-card-item:active {
   transform: scale(0.97);
-  background: rgba(37, 75, 51, 0.95);
+  background: #FFFFFF;
 }
 
 .student-avatar {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(94, 145, 133, 0.4), rgba(156, 204, 192, 0.3));
-  border: 1px solid rgba(181, 216, 199, 0.4);
+  background: linear-gradient(135deg, var(--emerald-200), var(--emerald-400));
+  border: 1px solid rgba(94, 145, 133, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -416,7 +410,7 @@ html, body {
   display: block;
   font-size: 11px;
   font-weight: 700;
-  color: var(--emerald-200);
+  color: var(--emerald-800);
   margin-bottom: 5px;
 }
 
@@ -424,21 +418,21 @@ html, body {
   width: 100%;
   padding: 10px 14px;
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(181, 216, 199, 0.3);
-  background: rgba(6, 39, 26, 0.85);
+  border: 1px solid var(--card-border);
+  background: var(--emerald-50);
   font-size: 12px;
-  color: var(--text-main);
+  color: var(--emerald-950);
   outline: none;
 }
 
 .form-control:focus {
-  border-color: var(--emerald-400);
+  border-color: var(--emerald-800);
 }
 
 /* Formula Box */
 .formula-box {
-  background: linear-gradient(135deg, rgba(94, 145, 133, 0.3), rgba(6, 39, 26, 0.85));
-  border-left: 3px solid var(--emerald-400);
+  background: linear-gradient(135deg, rgba(181, 216, 199, 0.35), rgba(240, 247, 244, 0.95));
+  border-left: 3px solid var(--emerald-800);
   border-radius: 14px;
   padding: 12px 14px;
   margin: 12px 0;
@@ -447,13 +441,13 @@ html, body {
 .formula-title {
   font-size: 11px;
   font-weight: 800;
-  color: var(--emerald-200);
+  color: var(--emerald-950);
   margin-bottom: 3px;
 }
 
 .formula-text {
   font-size: 10px;
-  color: var(--emerald-400);
+  color: var(--emerald-800);
   line-height: 1.4;
 }
 
@@ -464,7 +458,7 @@ html, body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(3, 20, 13, 0.8);
+  background: rgba(6, 39, 26, 0.6);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   display: flex;
@@ -473,17 +467,17 @@ html, body {
 }
 
 .modal-content {
-  background: #06271A;
-  border-top: 1px solid rgba(181, 216, 199, 0.35);
+  background: #FFFFFF;
+  border-top: 1px solid var(--card-border);
   border-top-left-radius: 28px;
   border-top-right-radius: 28px;
   width: 100%;
   padding: 22px 18px 30px 18px;
   max-height: 78vh;
   overflow-y: auto;
-  box-shadow: 0 -15px 50px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 -15px 50px rgba(6, 39, 26, 0.25);
   animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-  color: var(--text-main);
+  color: var(--emerald-950);
 }
 
 @keyframes slideUp {
@@ -501,13 +495,13 @@ html, body {
 .modal-title {
   font-size: 16px;
   font-weight: 800;
-  color: var(--text-main);
+  color: var(--emerald-950);
 }
 
 .close-btn {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--emerald-50);
   border: none;
-  color: var(--text-main);
+  color: var(--emerald-950);
   width: 30px;
   height: 30px;
   border-radius: 50%;
@@ -525,9 +519,9 @@ html, body {
   justify-content: space-between;
   padding: 10px 12px;
   border-radius: 14px;
-  background: rgba(37, 75, 51, 0.45);
+  background: var(--emerald-50);
   margin-bottom: 6px;
-  border: 1px solid rgba(181, 216, 199, 0.2);
+  border: 1px solid var(--card-border);
   font-size: 11px;
 }
 
