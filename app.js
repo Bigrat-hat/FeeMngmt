@@ -337,7 +337,7 @@ function initDashboardCharts() {
   });
 }
 
-// --- 2. Students Directory View ---
+// --- 2. Students Directory View (Cleaned: Only Status Badge on Right) ---
 function renderStudentsView(students) {
   return `
     <!-- Search Pill -->
@@ -346,7 +346,7 @@ function renderStudentsView(students) {
       <input type="text" id="studentSearchInput" class="search-pill-input" placeholder="Search student name, class, active, left..." value="${searchQuery}" oninput="onStudentSearchInput(event)" onkeydown="onStudentSearchKeyDown(event)" />
     </div>
 
-    <p style="font-size:10px; color:var(--emerald-600); margin-bottom:8px; text-align:right;">💡 Tap any student to view profile, edit status (Active/Left/Closed) or delete</p>
+    <p style="font-size:10px; color:var(--emerald-600); margin-bottom:8px; text-align:right;">💡 Tap any student to view profile, edit status (Active/Left/Closed) or collect fee</p>
 
     <!-- Student Cards List Container -->
     <div id="students-list-container">
@@ -386,11 +386,6 @@ function renderStudentCardListHTML(students) {
         </div>
         <div style="text-align:right;">
           ${isDiscontinued ? `<span class="badge badge-closed">${s.status.toUpperCase()}</span>` : renderStatusBadge(fin.dueStatus, fin.totalCurrentDue)}
-          ${!isDiscontinued ? `
-            <div style="margin-top:4px;">
-              <button class="btn-secondary" style="padding:4px 8px; font-size:10px;" onclick="event.stopPropagation(); openModal('collect-fee', ${s.id})">Collect</button>
-            </div>
-          ` : ''}
         </div>
       </div>
     `;
@@ -588,8 +583,10 @@ function renderActiveModal() {
     return;
   }
 
-  // Modal 1: Add Student
+  // Modal 1: Add Student (Default joining_date to today's real current date!)
   if (activeModal === 'add-student') {
+    const todayDateStr = new Date().toISOString().split('T')[0];
+
     container.innerHTML = `
       <div class="modal-overlay" onclick="closeModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
@@ -625,8 +622,8 @@ function renderActiveModal() {
                 <input type="number" name="monthly_fee" class="form-control" required value="300" />
               </div>
               <div class="form-group">
-                <label class="form-label">Joining Date *</label>
-                <input type="date" name="joining_date" class="form-control" required value="2026-05-01" />
+                <label class="form-label">Joining Date (Default Today) *</label>
+                <input type="date" name="joining_date" class="form-control" required value="${todayDateStr}" />
               </div>
             </div>
 
@@ -746,7 +743,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 3: Board Student List Drawer (~70% Height Bottom Sheet Modal)
+  // Modal 3: Board Student List Drawer
   else if (activeModal === 'board-list' && selectedBoardForList) {
     const boardStudents = db.getStudentsByBoard(selectedBoardForList);
     const displayBoardTitle = selectedBoardForList === 'State Board' ? 'State / MP Board' : selectedBoardForList;
@@ -794,7 +791,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 4: Student Profile Drawer
+  // Modal 4: Student Profile Drawer (Chronological Cumulative Audit Display)
   else if (activeModal === 'student-profile' && profileStudentId) {
     const fin = db.calculateStudentFinancials(profileStudentId);
     if (!fin) return;
@@ -826,7 +823,7 @@ function renderActiveModal() {
                 <span style="font-size:10px; color:var(--emerald-600);">Monthly Fee: ₹${fin.student.monthly_fee} • Joined: ${fin.student.joining_date}</span>
                 <div style="font-size:15px; font-weight:800; color:var(--emerald-950);">Total Outstanding Dues</div>
               </div>
-              <div style="font-size:20px; font-weight:800; color:var(--status-overdue-text);">₹${fin.totalCurrentDue}</div>
+              <div style="font-size:20px; font-weight:800; color:${fin.totalCurrentDue === 0 ? '#254B33' : 'var(--status-overdue-text)'};">₹${fin.totalCurrentDue}</div>
             </div>
           </div>
 
@@ -837,11 +834,11 @@ function renderActiveModal() {
               <div class="month-pending-row">
                 <div>
                   <strong>${bm.monthName} ${bm.year}</strong>
-                  <div style="font-size:9px; color:var(--emerald-600);">Fee: ₹${bm.baseFee} ${bm.previousArrears > 0 ? '+ Arrears: ₹' + bm.previousArrears : ''}</div>
+                  <div style="font-size:9px; color:var(--emerald-600);">Monthly Baseline Fee: ₹${bm.baseFee}</div>
                 </div>
                 <div>
                   ${bm.isPaid ? 
-                    '<span class="badge badge-paid">✓ PAID (₹' + bm.paidAmount + ')</span>' : 
+                    '<span class="badge badge-paid">✓ PAID (₹' + bm.baseFee + ')</span>' : 
                     '<span class="badge badge-overdue">🔴 PENDING ₹' + bm.remainingBalance + '</span>'
                   }
                 </div>

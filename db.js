@@ -270,7 +270,7 @@ class DBService {
     return newPayment;
   }
 
-  // --- Financial Engine & Month Breakdown ---
+  // --- Chronological Cumulative Financial Engine ---
   calculateStudentFinancials(studentId, referenceDate = new Date()) {
     const student = this.getStudentById(studentId);
     if (!student) return null;
@@ -297,48 +297,46 @@ class DBService {
       }
     }
 
-    let runningArrears = 0;
+    const totalPaidPool = payments.reduce((sum, p) => sum + Number(p.paid_amount || 0), 0);
+    let remainingPaidPool = totalPaidPool;
+
     const monthDetails = [];
 
     billingMonths.forEach(bm => {
-      const monthPayment = payments.find(p => p.year === bm.year && p.month === bm.monthName);
       const baseFee = student.monthly_fee;
-      const totalPayableThisMonth = baseFee + runningArrears;
-
-      let paid = 0;
+      let paidThisMonth = 0;
+      let remainingThisMonth = baseFee;
       let isPaid = false;
-      let remaining = totalPayableThisMonth;
 
-      if (monthPayment) {
-        paid = monthPayment.paid_amount;
-        remaining = monthPayment.remaining_amount !== undefined ? monthPayment.remaining_amount : Math.max(0, totalPayableThisMonth - paid);
-        isPaid = remaining === 0;
-        runningArrears = remaining;
+      if (remainingPaidPool >= baseFee) {
+        paidThisMonth = baseFee;
+        remainingThisMonth = 0;
+        isPaid = true;
+        remainingPaidPool -= baseFee;
       } else {
-        runningArrears = totalPayableThisMonth;
+        paidThisMonth = remainingPaidPool;
+        remainingThisMonth = Math.max(0, baseFee - remainingPaidPool);
+        isPaid = (remainingThisMonth === 0);
+        remainingPaidPool = 0;
       }
 
       monthDetails.push({
         year: bm.year,
         monthName: bm.monthName,
         baseFee,
-        previousArrears: totalPayableThisMonth - baseFee,
-        totalPayable: totalPayableThisMonth,
-        paidAmount: paid,
-        remainingBalance: remaining,
-        isPaid,
-        paymentRecord: monthPayment || null
+        paidAmount: paidThisMonth,
+        remainingBalance: remainingThisMonth,
+        isPaid
       });
     });
 
-    const currentMonthDetail = monthDetails[monthDetails.length - 1] || null;
-    const totalCurrentDue = currentMonthDetail ? currentMonthDetail.remainingBalance : 0;
+    const totalCurrentDue = monthDetails.reduce((sum, m) => sum + m.remainingBalance, 0);
 
     const joiningDay = joiningDate.getDate();
     const currentDay = referenceDate.getDate();
     let dueStatus = 'UPCOMING';
 
-    if (currentMonthDetail && currentMonthDetail.isPaid) {
+    if (totalCurrentDue === 0) {
       dueStatus = 'PAID';
     } else {
       if (currentDay > joiningDay || monthDetails.filter(m => !m.isPaid).length > 1) {
@@ -350,13 +348,15 @@ class DBService {
       }
     }
 
+    const currentMonthDetail = monthDetails[monthDetails.length - 1] || null;
+
     return {
       student,
       billingMonths: monthDetails,
-      currentArrears: currentMonthDetail ? currentMonthDetail.previousArrears : 0,
-      currentMonthPayable: currentMonthDetail ? currentMonthDetail.totalPayable : student.monthly_fee,
+      currentArrears: Math.max(0, totalCurrentDue - (currentMonthDetail ? currentMonthDetail.baseFee : 0)),
+      currentMonthPayable: totalCurrentDue,
       currentMonthPaid: currentMonthDetail ? currentMonthDetail.paidAmount : 0,
-      currentMonthRemaining: currentMonthDetail ? currentMonthDetail.remainingBalance : student.monthly_fee,
+      currentMonthRemaining: totalCurrentDue,
       totalCurrentDue,
       dueStatus
     };
@@ -403,7 +403,6 @@ class DBService {
       }
     });
 
-    // Board-wise breakdown
     const boardCounts = {
       'CBSE': 0,
       'State Board': 0,
