@@ -1,4 +1,4 @@
-const CACHE_NAME = 'anshu-coaching-v7';
+const CACHE_NAME = 'anshu-coaching-v8';
 
 // Force Service Worker to activate immediately on updates
 self.addEventListener('install', (event) => {
@@ -11,7 +11,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            return caches.delete(cache); // Delete old pixelated icons & cache!
+            return caches.delete(cache); // Delete old cached versions!
           }
         })
       );

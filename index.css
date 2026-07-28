@@ -1,36 +1,43 @@
-/* Anshu Coaching Classes - Canva Slate Color Palette & Ultra Advanced Glassmorphism */
+/* Anshu Coaching Classes - VIP Emerald & Canva Slate Ultra-Advanced Design System */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* Exact Canva Color Palette from User Image */
-  --canva-slate-900: #263A47;
-  --canva-slate-700: #4A5B6A;
-  --canva-slate-500: #728495;
-  --canva-slate-300: #98A9BE;
-  --canva-slate-100: #B4C5DB;
+  /* VIP Emerald Color Palette from Uploaded Image */
+  --emerald-950: #06271A; /* Deepest Forest Emerald Dark Background */
+  --emerald-800: #254B33; /* Rich Deep Emerald Green */
+  --emerald-600: #5E9185; /* Muted Jade Teal */
+  --emerald-400: #9CCCC0; /* Luminous Sage Mint */
+  --emerald-200: #B5D8C7; /* Soft Light Mint Aqua */
+
+  /* Canva Slate Complements */
+  --slate-900: #263A47;
+  --slate-700: #4A5B6A;
+  --slate-500: #728495;
+  --slate-300: #98A9BE;
 
   /* Surface & Canvas */
-  --bg-deep: #1E2D38;
-  --bg-canvas: #263A47;
-  --card-bg: rgba(38, 58, 71, 0.85);
-  --card-bg-hover: rgba(74, 91, 106, 0.95);
-  --card-border: rgba(180, 197, 219, 0.22);
-  --card-border-glow: rgba(180, 197, 219, 0.45);
+  --bg-deep: #03140D;
+  --bg-canvas: #06271A;
+  --card-bg: rgba(37, 75, 51, 0.65);
+  --card-bg-hover: rgba(37, 75, 51, 0.88);
+  --card-border: rgba(181, 216, 199, 0.25);
+  --card-border-glow: rgba(156, 204, 192, 0.45);
 
-  --text-main: #FFFFFF;
-  --text-muted: #B4C5DB;
-  --text-dim: #98A9BE;
+  --text-main: #F8FAFC;
+  --text-muted: #B5D8C7;
+  --text-dim: #9CCCC0;
 
-  /* Gradients */
-  --primary-gradient: linear-gradient(135deg, #263A47 0%, #4A5B6A 100%);
-  --accent-gradient: linear-gradient(135deg, #4A5B6A 0%, #728495 100%);
-  --highlight-gradient: linear-gradient(135deg, #728495 0%, #98A9BE 100%);
+  /* VIP Gradients */
+  --vip-gradient-primary: linear-gradient(135deg, #254B33 0%, #5E9185 50%, #9CCCC0 100%);
+  --vip-gradient-button: linear-gradient(135deg, #254B33 0%, #5E9185 100%);
+  --vip-gradient-card: linear-gradient(135deg, rgba(37, 75, 51, 0.75) 0%, rgba(6, 39, 26, 0.92) 100%);
+  --vip-gradient-header: linear-gradient(135deg, rgba(6, 39, 26, 0.95) 0%, rgba(38, 58, 71, 0.95) 100%);
 
   /* Status Colors */
-  --status-paid-bg: rgba(16, 185, 129, 0.18);
-  --status-paid-text: #34D399;
-  --status-paid-border: rgba(52, 211, 153, 0.4);
+  --status-paid-bg: rgba(156, 204, 192, 0.18);
+  --status-paid-text: #B5D8C7;
+  --status-paid-border: rgba(181, 216, 199, 0.4);
 
   --status-due-bg: rgba(245, 158, 11, 0.18);
   --status-due-text: #FBBF24;
@@ -41,8 +48,8 @@
   --status-overdue-border: rgba(248, 113, 113, 0.45);
 
   --radius-pill: 9999px;
-  --radius-card: 20px;
-  --radius-modal: 28px;
+  --radius-card: 22px;
+  --radius-modal: 30px;
   --transition-smooth: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -62,8 +69,8 @@ html, body {
   overflow: hidden;
   background-color: var(--bg-deep);
   background-image: 
-    radial-gradient(circle at 10% 10%, rgba(180, 197, 219, 0.18) 0%, transparent 45%),
-    radial-gradient(circle at 90% 90%, rgba(114, 132, 149, 0.25) 0%, transparent 45%);
+    radial-gradient(circle at 12% 12%, rgba(156, 204, 192, 0.15) 0%, transparent 45%),
+    radial-gradient(circle at 88% 88%, rgba(37, 75, 51, 0.35) 0%, transparent 45%);
   user-select: none;
   color: var(--text-main);
 }
@@ -83,10 +90,10 @@ html, body {
   max-width: 440px;
   height: 100%;
   max-height: 880px;
-  background: var(--canva-slate-900);
+  background: var(--emerald-950);
   border-radius: 36px;
-  border: 1px solid rgba(180, 197, 219, 0.25);
-  box-shadow: 0 25px 70px -15px rgba(0, 0, 0, 0.65), 0 0 30px 0 rgba(180, 197, 219, 0.1);
+  border: 1px solid rgba(181, 216, 199, 0.3);
+  box-shadow: 0 25px 70px -15px rgba(0, 0, 0, 0.75), 0 0 35px 0 rgba(156, 204, 192, 0.15);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -95,11 +102,11 @@ html, body {
 
 /* Header Bar */
 .app-header {
-  height: 62px;
+  height: 64px;
   padding: 0 16px;
-  background: rgba(38, 58, 71, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: var(--vip-gradient-header);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border-bottom: 1px solid var(--card-border);
   display: flex;
   align-items: center;
@@ -115,18 +122,18 @@ html, body {
 }
 
 .brand-icon {
-  width: 36px;
-  height: 36px;
-  background: linear-gradient(135deg, #4A5B6A 0%, #728495 100%);
-  color: white;
-  border: 1px solid rgba(180, 197, 219, 0.4);
+  width: 38px;
+  height: 38px;
+  background: var(--vip-gradient-primary);
+  color: #06271A;
+  border: 1px solid rgba(181, 216, 199, 0.5);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 18px;
-  box-shadow: 0 4px 14px rgba(38, 58, 71, 0.4);
+  font-size: 19px;
+  box-shadow: 0 4px 16px rgba(156, 204, 192, 0.35);
 }
 
 .brand-title {
@@ -139,16 +146,16 @@ html, body {
 
 .brand-subtitle {
   font-size: 10px;
-  color: var(--canva-slate-100);
+  color: var(--emerald-400);
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.4px;
 }
 
 /* Main Scrollable Viewport Container */
 .scrollable-content {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 14px 80px 14px;
+  padding: 16px 14px 82px 14px;
   scroll-behavior: smooth;
   will-change: transform;
 }
@@ -166,16 +173,16 @@ html, body {
   width: 82%;
   max-width: 280px;
   height: 54px;
-  background: rgba(38, 58, 71, 0.95);
+  background: rgba(6, 39, 26, 0.95);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(180, 197, 219, 0.25);
+  border: 1px solid rgba(181, 216, 199, 0.3);
   padding: 4px;
   display: flex;
   align-items: center;
   justify-content: space-around;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
   z-index: 50;
 }
 
@@ -189,7 +196,7 @@ html, body {
   border-radius: var(--radius-pill);
   background: transparent;
   border: none;
-  color: var(--canva-slate-300);
+  color: var(--emerald-300, #9CCCC0);
   font-size: 9px;
   font-weight: 700;
   cursor: pointer;
@@ -199,10 +206,10 @@ html, body {
 }
 
 .nav-item.active {
-  background: var(--canva-slate-100);
-  color: var(--canva-slate-900);
+  background: var(--vip-gradient-primary);
+  color: #06271A;
   font-weight: 800;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 6px 16px rgba(156, 204, 192, 0.35);
 }
 
 .nav-item svg {
@@ -210,13 +217,13 @@ html, body {
   height: 17px;
 }
 
-/* Glass Cards */
+/* VIP Metallic Glass Cards */
 .glass-card {
-  background: rgba(74, 91, 106, 0.45);
+  background: var(--vip-gradient-card);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--card-border);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
   border-radius: var(--radius-card);
   padding: 16px;
   margin-bottom: 12px;
@@ -248,7 +255,7 @@ html, body {
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.6px;
-  color: var(--canva-slate-100);
+  color: var(--emerald-400);
   text-transform: uppercase;
 }
 
@@ -261,7 +268,7 @@ html, body {
 
 .metric-sub {
   font-size: 10px;
-  color: var(--canva-slate-300);
+  color: var(--emerald-200);
   margin-top: 2px;
 }
 
@@ -302,11 +309,11 @@ html, body {
 
 /* Action Buttons */
 .btn-primary {
-  background: linear-gradient(135deg, #4A5B6A 0%, #728495 100%);
-  color: white;
+  background: var(--vip-gradient-primary);
+  color: #06271A;
   padding: 12px 20px;
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(180, 197, 219, 0.3);
+  border: 1px solid rgba(181, 216, 199, 0.5);
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
@@ -314,7 +321,7 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  box-shadow: 0 6px 20px rgba(38, 58, 71, 0.4);
+  box-shadow: 0 6px 20px rgba(156, 204, 192, 0.35);
   transition: var(--transition-smooth);
 }
 
@@ -323,11 +330,11 @@ html, body {
 }
 
 .btn-secondary {
-  background: rgba(74, 91, 106, 0.6);
+  background: rgba(37, 75, 51, 0.7);
   color: var(--text-main);
   padding: 7px 14px;
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(180, 197, 219, 0.25);
+  border: 1px solid rgba(181, 216, 199, 0.3);
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
@@ -338,13 +345,13 @@ html, body {
   transform: scale(0.96);
 }
 
-/* Search Bar (Smooth Keyboard Handling) */
+/* Search Bar */
 .search-pill-input {
   width: 100%;
   padding: 11px 14px 11px 38px;
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(180, 197, 219, 0.25);
-  background: rgba(38, 58, 71, 0.85);
+  border: 1px solid rgba(181, 216, 199, 0.3);
+  background: rgba(6, 39, 26, 0.85);
   font-size: 12px;
   color: var(--text-main);
   outline: none;
@@ -352,8 +359,8 @@ html, body {
 }
 
 .search-pill-input:focus {
-  border-color: var(--canva-slate-100);
-  box-shadow: 0 0 12px rgba(180, 197, 219, 0.3);
+  border-color: var(--emerald-400);
+  box-shadow: 0 0 14px rgba(156, 204, 192, 0.35);
 }
 
 .search-pill-wrapper {
@@ -366,7 +373,7 @@ html, body {
   left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--canva-slate-300);
+  color: var(--emerald-400);
 }
 
 /* Student Row Card */
@@ -375,7 +382,7 @@ html, body {
   align-items: center;
   justify-content: space-between;
   padding: 12px 14px;
-  background: rgba(74, 91, 106, 0.35);
+  background: var(--vip-gradient-card);
   border-radius: 18px;
   margin-bottom: 8px;
   border: 1px solid var(--card-border);
@@ -385,15 +392,15 @@ html, body {
 
 .student-card-item:active {
   transform: scale(0.97);
-  background: rgba(74, 91, 106, 0.6);
+  background: rgba(37, 75, 51, 0.95);
 }
 
 .student-avatar {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(114, 132, 149, 0.4), rgba(180, 197, 219, 0.3));
-  border: 1px solid rgba(180, 197, 219, 0.3);
+  background: linear-gradient(135deg, rgba(94, 145, 133, 0.4), rgba(156, 204, 192, 0.3));
+  border: 1px solid rgba(181, 216, 199, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -409,7 +416,7 @@ html, body {
   display: block;
   font-size: 11px;
   font-weight: 700;
-  color: var(--canva-slate-100);
+  color: var(--emerald-200);
   margin-bottom: 5px;
 }
 
@@ -417,21 +424,21 @@ html, body {
   width: 100%;
   padding: 10px 14px;
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(180, 197, 219, 0.25);
-  background: rgba(38, 58, 71, 0.8);
+  border: 1px solid rgba(181, 216, 199, 0.3);
+  background: rgba(6, 39, 26, 0.85);
   font-size: 12px;
   color: var(--text-main);
   outline: none;
 }
 
 .form-control:focus {
-  border-color: var(--canva-slate-100);
+  border-color: var(--emerald-400);
 }
 
 /* Formula Box */
 .formula-box {
-  background: linear-gradient(135deg, rgba(114, 132, 149, 0.25), rgba(38, 58, 71, 0.8));
-  border-left: 3px solid var(--canva-slate-100);
+  background: linear-gradient(135deg, rgba(94, 145, 133, 0.3), rgba(6, 39, 26, 0.85));
+  border-left: 3px solid var(--emerald-400);
   border-radius: 14px;
   padding: 12px 14px;
   margin: 12px 0;
@@ -440,13 +447,13 @@ html, body {
 .formula-title {
   font-size: 11px;
   font-weight: 800;
-  color: var(--canva-slate-100);
+  color: var(--emerald-200);
   margin-bottom: 3px;
 }
 
 .formula-text {
   font-size: 10px;
-  color: var(--canva-slate-300);
+  color: var(--emerald-400);
   line-height: 1.4;
 }
 
@@ -457,24 +464,24 @@ html, body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(30, 45, 56, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(3, 20, 13, 0.8);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   display: flex;
   align-items: flex-end;
   z-index: 100;
 }
 
 .modal-content {
-  background: #263A47;
-  border-top: 1px solid rgba(180, 197, 219, 0.3);
+  background: #06271A;
+  border-top: 1px solid rgba(181, 216, 199, 0.35);
   border-top-left-radius: 28px;
   border-top-right-radius: 28px;
   width: 100%;
   padding: 22px 18px 30px 18px;
   max-height: 78vh;
   overflow-y: auto;
-  box-shadow: 0 -15px 50px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 -15px 50px rgba(0, 0, 0, 0.7);
   animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   color: var(--text-main);
 }
@@ -518,9 +525,9 @@ html, body {
   justify-content: space-between;
   padding: 10px 12px;
   border-radius: 14px;
-  background: rgba(74, 91, 106, 0.4);
+  background: rgba(37, 75, 51, 0.45);
   margin-bottom: 6px;
-  border: 1px solid rgba(180, 197, 219, 0.15);
+  border: 1px solid rgba(181, 216, 199, 0.2);
   font-size: 11px;
 }
 

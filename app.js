@@ -116,9 +116,9 @@ function renderAdminLoginView() {
     <div style="display:flex; flex-direction:column; justify-content:center; min-height:100%; padding:20px 10px;">
       
       <div style="text-align:center; margin-bottom:28px;">
-        <div class="brand-icon" style="width:58px; height:58px; font-size:28px; border-radius:18px; margin:0 auto 12px auto; box-shadow:0 12px 28px rgba(38,58,71,0.4);">A</div>
+        <div class="brand-icon" style="width:60px; height:60px; font-size:28px; border-radius:18px; margin:0 auto 12px auto; box-shadow:0 12px 28px rgba(156,204,192,0.35);">A</div>
         <h1 style="font-size:24px; font-weight:800; color:var(--text-main);">Anshu Coaching Classes</h1>
-        <p style="font-size:13px; color:var(--canva-slate-100); font-weight:700; margin-top:2px;">Fee Management Portal</p>
+        <p style="font-size:13px; color:var(--emerald-400); font-weight:700; margin-top:2px;">VIP Fee Management Portal ✨</p>
       </div>
 
       <div class="glass-card" style="padding:22px; border-radius:24px;">
@@ -139,8 +139,8 @@ function renderAdminLoginView() {
         </form>
       </div>
 
-      <div style="text-align:center; margin-top:20px; font-size:10px; color:var(--canva-slate-300);">
-        Anshu Coaching Classes Fee Management v1.0.0
+      <div style="text-align:center; margin-top:20px; font-size:10px; color:var(--emerald-400);">
+        Anshu Coaching Classes VIP Edition v1.0.0
       </div>
 
     </div>
@@ -205,7 +205,7 @@ function renderDashboardView(metrics) {
     <div class="metrics-grid-2x2">
       <div class="glass-card metric-card-compact">
         <div class="metric-lbl">ACTIVE STUDENTS</div>
-        <div class="metric-val">${metrics.activeStudents} <span style="font-size:12px; color:var(--canva-slate-300);">/ ${metrics.totalStudents}</span></div>
+        <div class="metric-val">${metrics.activeStudents} <span style="font-size:12px; color:var(--emerald-400);">/ ${metrics.totalStudents}</span></div>
         <div class="metric-sub">Enrolled Students</div>
       </div>
 
@@ -222,7 +222,7 @@ function renderDashboardView(metrics) {
       </div>
 
       <!-- Clickable Pending Dues Card -->
-      <div class="glass-card metric-card-compact clickable-card" onclick="openModal('pending-list')" style="border:1.5px solid rgba(239, 68, 68, 0.45); background:rgba(239,68,68,0.12);">
+      <div class="glass-card metric-card-compact clickable-card" onclick="openModal('pending-list')" style="border:1.5px solid rgba(239, 68, 68, 0.45); background:rgba(239,68,68,0.15);">
         <div class="metric-lbl" style="color:var(--status-overdue-text);">PENDING DUES 🔍</div>
         <div class="metric-val" style="color:var(--status-overdue-text)">₹${metrics.totalAggregateDue}</div>
         <div class="metric-sub" style="font-weight:700; color:var(--status-overdue-text);">${metrics.pendingStudentsCount} Students (Tap for list)</div>
@@ -269,13 +269,13 @@ function initDashboardCharts() {
         {
           label: 'Cash',
           data: trendData.slice(0, 7).map(d => d.Cash),
-          backgroundColor: '#4A5B6A',
+          backgroundColor: '#5E9185',
           borderRadius: 6
         },
         {
           label: 'Online',
           data: trendData.slice(0, 7).map(d => d.Online),
-          backgroundColor: '#B4C5DB',
+          backgroundColor: '#9CCCC0',
           borderRadius: 6
         }
       ]
@@ -283,25 +283,25 @@ function initDashboardCharts() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9 }, color: '#B4C5DB' } } },
+      plugins: { legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9 }, color: '#B5D8C7' } } },
       scales: {
-        x: { stacked: true, ticks: { color: '#B4C5DB' } },
-        y: { stacked: true, ticks: { color: '#B4C5DB' } }
+        x: { stacked: true, ticks: { color: '#B5D8C7' } },
+        y: { stacked: true, ticks: { color: '#B5D8C7' } }
       }
     }
   });
 }
 
-// --- 2. Students Directory View (Targeted In-Place DOM Filter - Fixes Keyboard Closing Bug!) ---
+// --- 2. Students Directory View ---
 function renderStudentsView(students) {
   return `
-    <!-- Search Pill (Keyboard Fix: In-place DOM filter & Enter Key Blur) -->
+    <!-- Search Pill -->
     <div class="search-pill-wrapper">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
       <input type="text" id="studentSearchInput" class="search-pill-input" placeholder="Search student name, class, active, left..." value="${searchQuery}" oninput="onStudentSearchInput(event)" onkeydown="onStudentSearchKeyDown(event)" />
     </div>
 
-    <p style="font-size:10px; color:var(--canva-slate-300); margin-bottom:8px; text-align:right;">💡 Tap any student to view profile, edit status (Active/Left/Closed) or delete</p>
+    <p style="font-size:10px; color:var(--emerald-400); margin-bottom:8px; text-align:right;">💡 Tap any student to view profile, edit status (Active/Left/Closed) or delete</p>
 
     <!-- Student Cards List Container -->
     <div id="students-list-container">
@@ -318,7 +318,7 @@ function renderStudentCardListHTML(students) {
   }
 
   if (filtered.length === 0) {
-    return `<div style="text-align:center; padding:30px 10px; color:var(--canva-slate-300); font-size:12px;">No student records found matching "${searchQuery}".</div>`;
+    return `<div style="text-align:center; padding:30px 10px; color:var(--emerald-400); font-size:12px;">No student records found matching "${searchQuery}".</div>`;
   }
 
   return filtered.map(s => {
@@ -327,7 +327,7 @@ function renderStudentCardListHTML(students) {
     const isDiscontinued = s.status === 'Left' || s.status === 'Session Closed';
 
     return `
-      <div class="student-card-item" onclick="openModal('student-profile', ${s.id})" style="${isDiscontinued ? 'opacity:0.75; background:rgba(74,91,106,0.2);' : ''}">
+      <div class="student-card-item" onclick="openModal('student-profile', ${s.id})" style="${isDiscontinued ? 'opacity:0.75; background:rgba(37,75,51,0.3);' : ''}">
         <div style="display:flex; align-items:center; gap:10px;">
           <span class="student-avatar">${avatar}</span>
           <div>
@@ -336,7 +336,7 @@ function renderStudentCardListHTML(students) {
               ${s.status === 'Left' ? '<span class="badge badge-due" style="font-size:8px;">LEFT</span>' : ''}
               ${s.status === 'Session Closed' ? '<span class="badge badge-closed" style="font-size:8px;">CLOSED</span>' : ''}
             </div>
-            <div style="font-size:10px; color:var(--canva-slate-300);">${s.class} • ₹${s.monthly_fee}/mo ${s.school ? '• ' + s.school : ''}</div>
+            <div style="font-size:10px; color:var(--emerald-400);">${s.class} • ₹${s.monthly_fee}/mo ${s.school ? '• ' + s.school : ''}</div>
           </div>
         </div>
         <div style="text-align:right;">
@@ -352,7 +352,6 @@ function renderStudentCardListHTML(students) {
   }).join('');
 }
 
-// In-place real-time search filtering without destroying input focus or closing keyboard!
 window.onStudentSearchInput = function(e) {
   searchQuery = e.target.value;
   const container = document.getElementById('students-list-container');
@@ -361,10 +360,9 @@ window.onStudentSearchInput = function(e) {
   }
 };
 
-// Pressing Enter or Done dismisses the keyboard!
 window.onStudentSearchKeyDown = function(e) {
   if (e.key === 'Enter') {
-    e.target.blur(); // Dismisses mobile virtual keyboard on Enter!
+    e.target.blur();
   }
 };
 
@@ -405,15 +403,15 @@ function renderCollectFeesView(students) {
         <div class="formula-box">
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
             <div>
-              <span style="font-size:9px; color:var(--canva-slate-300);">Monthly Fee:</span>
+              <span style="font-size:9px; color:var(--emerald-400);">Monthly Fee:</span>
               <div style="font-weight:700; font-size:12px;">₹${fin.student.monthly_fee}</div>
             </div>
             <div>
-              <span style="font-size:9px; color:var(--canva-slate-300);">Arrears:</span>
+              <span style="font-size:9px; color:var(--emerald-400);">Arrears:</span>
               <div style="font-weight:700; font-size:12px; color:var(--status-overdue-text);">₹${fin.currentArrears}</div>
             </div>
             <div style="grid-column: span 2; margin-top:2px;">
-              <span style="font-size:9px; color:var(--canva-slate-300);">Total Payable:</span>
+              <span style="font-size:9px; color:var(--emerald-400);">Total Payable:</span>
               <div style="font-size:16px; font-weight:800; color:var(--text-main);">₹${fin.totalCurrentDue}</div>
             </div>
           </div>
@@ -502,10 +500,10 @@ function renderCalendarView(students) {
     <div class="glass-card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <h3 style="font-size:15px; font-weight:800; color:var(--text-main);">July 2026 Fee Calendar</h3>
-        <span style="font-size:10px; color:var(--canva-slate-300); font-weight:700;">💡 Tap date to view dues</span>
+        <span style="font-size:10px; color:var(--emerald-400); font-weight:700;">💡 Tap date to view dues</span>
       </div>
 
-      <div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:4px; font-size:10px; font-weight:800; color:var(--canva-slate-300); text-align:center; margin-bottom:8px;">
+      <div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:4px; font-size:10px; font-weight:800; color:var(--emerald-400); text-align:center; margin-bottom:8px;">
         <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
       </div>
       <div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:4px;">
@@ -526,9 +524,9 @@ function renderCalendarGridDays(students) {
     const hasDue = dueStudents.length > 0;
 
     gridHTML += `
-      <div class="clickable-card" onclick="openModal('calendar-day', ${day})" style="height:38px; background:${isToday ? 'var(--canva-slate-100)' : hasDue ? 'rgba(114, 132, 149, 0.45)' : 'rgba(74, 91, 106, 0.3)'}; color:${isToday ? 'var(--canva-slate-900)' : 'var(--text-main)'}; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; font-weight:700;">
+      <div class="clickable-card" onclick="openModal('calendar-day', ${day})" style="height:38px; background:${isToday ? 'var(--emerald-400)' : hasDue ? 'rgba(94, 145, 133, 0.45)' : 'rgba(37, 75, 51, 0.35)'}; color:${isToday ? '#06271A' : 'var(--text-main)'}; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; font-weight:700;">
         <span>${day}</span>
-        ${hasDue ? `<span style="width:4px; height:4px; background:${isToday ? '#263A47' : '#34D399'}; border-radius:50%; margin-top:2px;"></span>` : ''}
+        ${hasDue ? `<span style="width:4px; height:4px; background:${isToday ? '#06271A' : '#B5D8C7'}; border-radius:50%; margin-top:2px;"></span>` : ''}
       </div>
     `;
   }
@@ -720,7 +718,7 @@ function renderActiveModal() {
               <span class="student-avatar" style="width:42px; height:42px; font-size:20px;">${avatar}</span>
               <div>
                 <h3 class="modal-title">${fin.student.name}</h3>
-                <div style="font-size:10px; color:var(--canva-slate-300);">
+                <div style="font-size:10px; color:var(--emerald-400);">
                   ${fin.student.class} ${fin.student.status !== 'Active' ? '• ' + fin.student.status : ''}
                 </div>
               </div>
@@ -734,21 +732,21 @@ function renderActiveModal() {
           <div class="formula-box" style="margin-top:4px; margin-bottom:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
-                <span style="font-size:10px; color:var(--canva-slate-300);">Monthly Fee: ₹${fin.student.monthly_fee} • Joined: ${fin.student.joining_date}</span>
+                <span style="font-size:10px; color:var(--emerald-400);">Monthly Fee: ₹${fin.student.monthly_fee} • Joined: ${fin.student.joining_date}</span>
                 <div style="font-size:15px; font-weight:800; color:var(--text-main);">Total Outstanding Dues</div>
               </div>
               <div style="font-size:20px; font-weight:800; color:var(--status-overdue-text);">₹${fin.totalCurrentDue}</div>
             </div>
           </div>
 
-          <h4 style="font-size:11px; font-weight:800; color:var(--canva-slate-100); margin-bottom:6px;">Month-by-Month Fee Audit</h4>
+          <h4 style="font-size:11px; font-weight:800; color:var(--emerald-200); margin-bottom:6px;">Month-by-Month Fee Audit</h4>
           
           <div style="max-height:180px; overflow-y:auto; margin-bottom:12px;">
             ${fin.billingMonths.map(bm => `
               <div class="month-pending-row">
                 <div>
                   <strong>${bm.monthName} ${bm.year}</strong>
-                  <div style="font-size:9px; color:var(--canva-slate-300);">Fee: ₹${bm.baseFee} ${bm.previousArrears > 0 ? '+ Arrears: ₹' + bm.previousArrears : ''}</div>
+                  <div style="font-size:9px; color:var(--emerald-400);">Fee: ₹${bm.baseFee} ${bm.previousArrears > 0 ? '+ Arrears: ₹' + bm.previousArrears : ''}</div>
                 </div>
                 <div>
                   ${bm.isPaid ? 
@@ -786,7 +784,7 @@ function renderActiveModal() {
           <div class="modal-header">
             <div>
               <h3 class="modal-title">July ${selectedCalendarDay}, 2026 - Dues Timeline</h3>
-              <div style="font-size:10px; color:var(--canva-slate-300); font-weight:700;">
+              <div style="font-size:10px; color:var(--emerald-400); font-weight:700;">
                 ${dueStudents.length} Student(s) with monthly fee baseline on the ${selectedCalendarDay}th
               </div>
             </div>
@@ -802,7 +800,7 @@ function renderActiveModal() {
                     <span class="student-avatar">${s.gender === 'Female' ? '👧' : '👦'}</span>
                     <div>
                       <div style="font-size:12px; font-weight:700; color:var(--text-main);">${s.name}</div>
-                      <div style="font-size:10px; color:var(--canva-slate-300);">${s.class} • Monthly Fee: ₹${s.monthly_fee}</div>
+                      <div style="font-size:10px; color:var(--emerald-400);">${s.class} • Monthly Fee: ₹${s.monthly_fee}</div>
                     </div>
                   </div>
                   <div style="text-align:right;">
@@ -811,7 +809,7 @@ function renderActiveModal() {
                 </div>
               `;
             }).join('') : `
-              <div style="text-align:center; padding:30px 10px; color:var(--canva-slate-300); font-size:12px;">
+              <div style="text-align:center; padding:30px 10px; color:var(--emerald-400); font-size:12px;">
                 No recurring student dues scheduled on July ${selectedCalendarDay}.
               </div>
             `}
@@ -846,12 +844,12 @@ function renderActiveModal() {
                   <span class="student-avatar">${item.student.gender === 'Female' ? '👧' : '👦'}</span>
                   <div>
                     <div style="font-size:12px; font-weight:700; color:var(--text-main);">${item.student.name}</div>
-                    <div style="font-size:10px; color:var(--canva-slate-300);">${item.student.class}</div>
+                    <div style="font-size:10px; color:var(--emerald-400);">${item.student.class}</div>
                   </div>
                 </div>
                 <div style="text-align:right;">
                   <div style="font-size:13px; font-weight:800; color:var(--status-overdue-text);">₹${item.totalCurrentDue}</div>
-                  <div style="font-size:9px; color:var(--canva-slate-300);">${item.pendingMonths.length} Pending Month(s)</div>
+                  <div style="font-size:9px; color:var(--emerald-400);">${item.pendingMonths.length} Pending Month(s)</div>
                 </div>
               </div>
             `).join('')}
@@ -872,7 +870,7 @@ function renderActiveModal() {
             <h3 class="modal-title">Receipt Acknowledgement</h3>
             <button class="close-btn" onclick="closeModal()">✕</button>
           </div>
-          <div style="border:1px dashed var(--canva-slate-300); border-radius:14px; padding:14px; font-size:11px;">
+          <div style="border:1px dashed var(--emerald-400); border-radius:14px; padding:14px; font-size:11px;">
             <div style="text-align:center; font-weight:800; font-size:13px; margin-bottom:8px; color:var(--text-main);">ANSHU COACHING CLASSES</div>
             <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
               <span>Student:</span><strong>${receiptData.student.name}</strong>
@@ -881,7 +879,7 @@ function renderActiveModal() {
               <span>Period:</span><strong>${receiptData.payment.month} ${receiptData.payment.year}</strong>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-              <span>Paid Amount:</span><strong style="font-size:13px; color:#34D399;">₹${receiptData.payment.paid_amount}</strong>
+              <span>Paid Amount:</span><strong style="font-size:13px; color:#B5D8C7;">₹${receiptData.payment.paid_amount}</strong>
             </div>
             <div style="display:flex; justify-content:space-between;">
               <span>Remaining Arrears:</span><strong>₹${receiptData.remainingArrears}</strong>
