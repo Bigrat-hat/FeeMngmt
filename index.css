@@ -113,7 +113,7 @@ html, body {
   }
 }
 
-/* ULTRA PREMIUM ANIMATED SPLASH SCREEN (FULL SCREEN MATCHES SCREENSHOT) */
+/* ULTRA PREMIUM ANIMATED SPLASH SCREEN WITH 3D EMBLEM LOGO */
 .vip-splash-screen {
   position: absolute;
   top: 0;
@@ -138,27 +138,23 @@ html, body {
   pointer-events: none;
 }
 
-/* Outer Circular Animated Emblem Ring matching User Image */
-.splash-emblem-ring {
+/* Outer Circular Animated Emblem Logo Ring */
+.splash-logo-wrapper {
   width: 140px;
   height: 140px;
   border-radius: 50%;
-  border: 7px solid #FFFFFF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   margin-bottom: 24px;
   position: relative;
-  box-shadow: 0 0 45px rgba(181, 216, 199, 0.35);
+  box-shadow: 0 0 50px rgba(181, 216, 199, 0.45);
   animation: splashEmblemPulse 2s ease-in-out infinite;
 }
 
-.splash-emblem-letter {
-  font-size: 72px;
-  font-weight: 800;
-  color: #FFFFFF;
-  line-height: 1;
-  font-family: 'Plus Jakarta Sans', serif;
+.splash-logo-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #FFFFFF;
 }
 
 .splash-title-box {
@@ -231,7 +227,7 @@ html, body {
   100% { width: 100%; }
 }
 
-/* Fixed Header Bar with Locked Logo */
+/* Fixed Header Bar with Locked Logo Image */
 .app-header {
   height: 64px;
   min-height: 64px;
@@ -254,22 +250,16 @@ html, body {
   flex-shrink: 0;
 }
 
-.brand-icon {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  min-height: 40px;
+.brand-logo-img {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  min-height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
   flex-shrink: 0;
-  background: var(--vip-gradient-primary);
-  color: white;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: 20px;
-  box-shadow: 0 6px 18px rgba(37, 75, 51, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 6px 18px rgba(6, 39, 26, 0.35);
+  border: 2px solid rgba(255, 255, 255, 0.8);
   transform: translateZ(0);
 }
 

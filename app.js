@@ -167,13 +167,13 @@ function renderCurrentTab() {
   renderActiveModal();
 }
 
-// --- Admin Login Screen (Password Only: anshuu - Ultra Premium Locked Branding Header) ---
+// --- Admin Login Screen (Password Only: anshuu - Ultra Premium 3D Emblem Branding) ---
 function renderAdminLoginView() {
   return `
     <div style="display:flex; flex-direction:column; justify-content:center; min-height:100%; padding:20px 10px;">
       
       <div style="text-align:center; margin-bottom:24px;">
-        <div class="brand-icon" style="width:68px; height:68px; min-width:68px; min-height:68px; font-size:32px; border-radius:22px; margin:0 auto 12px auto; box-shadow:0 14px 36px rgba(6,39,26,0.35); flex-shrink:0;">A</div>
+        <img src="logo.png" alt="Anshu Coaching Emblem" style="width:76px; height:76px; border-radius:50%; margin:0 auto 12px auto; display:block; box-shadow:0 12px 32px rgba(6,39,26,0.35); border:3px solid #FFFFFF;" />
         <h1 style="font-size:22px; font-weight:800; color:var(--emerald-950); letter-spacing:-0.3px;">Anshu Coaching Classes</h1>
         <p style="font-size:12px; color:var(--emerald-600); font-weight:700; margin-top:3px;">VIP Fee Management Portal ✨</p>
       </div>
