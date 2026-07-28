@@ -438,7 +438,7 @@ class DBService {
     return true;
   }
 
-  // --- Financial Engine with Multi-Month Cycle Expiry & Isolated Khatabook Ledger ---
+  // --- SMART FINANCIAL ENGINE: 1-Month Cycle Grace Period for New Students ---
   calculateStudentFinancials(studentId, referenceDate = new Date()) {
     const student = this.getStudentById(studentId);
     if (!student) return null;
@@ -455,24 +455,27 @@ class DBService {
     const refDay = referenceDate.getDate();
 
     const joiningDay = joiningDate.getDate();
-    const monthsElapsed = (refYear - joiningDate.getFullYear()) * 12 + (refMonthIdx - joiningDate.getMonth());
+
+    // Calculate completed 1-month billing cycles
+    // A 1-month cycle completes ONLY when reference date passes joiningDay of the subsequent month!
+    let completedCyclesCount = (refYear - joiningDate.getFullYear()) * 12 + (refMonthIdx - joiningDate.getMonth());
+    if (refDay < joiningDay) {
+      completedCyclesCount--;
+    }
+    completedCyclesCount = Math.max(0, completedCyclesCount);
 
     const billingMonths = [];
     let startY = joiningDate.getFullYear();
     let startM = joiningDate.getMonth();
 
-    while (startY < refYear || (startY === refYear && startM <= refMonthIdx)) {
-      const isPastMonth = (startY < refYear) || (startY === refYear && startM < refMonthIdx);
-      const isCurrentMonthCycleComplete = (startY === refYear && startM === refMonthIdx && refDay > joiningDay);
-      const isEnrollmentDay = (monthsElapsed === 0 && refDay === joiningDay);
-
-      if (isPastMonth || isCurrentMonthCycleComplete || isEnrollmentDay) {
-        billingMonths.push({
-          year: startY,
-          monthIdx: startM,
-          monthName: MONTH_NAMES[startM]
-        });
-      }
+    // Build month cycle audit breakdown list
+    const totalCyclesToAudit = Math.max(1, completedCyclesCount + (refDay >= joiningDay ? 1 : 0));
+    for (let i = 0; i < totalCyclesToAudit; i++) {
+      billingMonths.push({
+        year: startY,
+        monthIdx: startM,
+        monthName: MONTH_NAMES[startM]
+      });
 
       startM++;
       if (startM > 11) {
@@ -481,17 +484,33 @@ class DBService {
       }
     }
 
-    const totalAccumulatedFee = billingMonths.length * student.monthly_fee;
+    // Past completed cycles fee requirement vs Active ongoing cycle fee requirement
+    const pastCompletedFeeRequirement = completedCyclesCount * student.monthly_fee;
+    const activeCycleFeeRequirement = (completedCyclesCount + 1) * student.monthly_fee;
+
     const totalPaidPool = payments.reduce((sum, p) => sum + Number(p.paid_amount || 0), 0);
 
-    const advanceBalance = Math.max(0, totalPaidPool - totalAccumulatedFee);
-    const totalCurrentDue = Math.max(0, totalAccumulatedFee - totalPaidPool);
+    const advanceBalance = Math.max(0, totalPaidPool - activeCycleFeeRequirement);
+    let totalCurrentDue = 0;
+    let dueStatus = 'UPCOMING';
+
+    if (totalPaidPool >= activeCycleFeeRequirement) {
+      dueStatus = 'PAID';
+      totalCurrentDue = 0;
+    } else if (totalPaidPool >= pastCompletedFeeRequirement) {
+      // Student has paid for all COMPLETED past cycles! Currently inside active 1-month grace cycle!
+      dueStatus = (refDay === joiningDay) ? 'DUE TODAY' : 'UPCOMING';
+      totalCurrentDue = activeCycleFeeRequirement - totalPaidPool;
+    } else {
+      // Student has unpaid COMPLETED past cycles -> OVERDUE (Pending Dues)!
+      dueStatus = 'OVERDUE';
+      totalCurrentDue = activeCycleFeeRequirement - totalPaidPool;
+    }
 
     const fullMonthsPaidCount = Math.floor(totalPaidPool / student.monthly_fee);
     const cycleInfo = this.calculateCyclePaidUntilDate(student.joining_date, fullMonthsPaidCount);
 
     let remainingPaidPool = totalPaidPool;
-
     const monthDetails = [];
 
     billingMonths.forEach((bm, idx) => {
@@ -533,30 +552,15 @@ class DBService {
       });
     });
 
-    let dueStatus = 'UPCOMING';
-
-    if (totalCurrentDue === 0) {
-      dueStatus = 'PAID';
-    } else {
-      if (monthsElapsed === 0 && refDay <= joiningDay) {
-        dueStatus = 'UPCOMING';
-      } else if (refDay === joiningDay) {
-        dueStatus = 'DUE TODAY';
-      } else if (refDay > joiningDay || monthDetails.filter(m => !m.isPaid).length > 1) {
-        dueStatus = 'OVERDUE';
-      } else {
-        dueStatus = 'UPCOMING';
-      }
-    }
-
     const currentMonthDetail = monthDetails[monthDetails.length - 1] || null;
 
     return {
       student,
       billingMonths: monthDetails,
-      totalAccumulatedFee,
+      totalAccumulatedFee: activeCycleFeeRequirement,
       totalPaidPool,
       fullMonthsPaidCount,
+      completedCyclesCount,
       cyclePaidUntil: cycleInfo.paidUntilStr,
       cycleNextRenewal: cycleInfo.renewalStr,
       advanceBalance,
@@ -630,6 +634,7 @@ class DBService {
     let totalAggregateDue = 0;
     const pendingStudentsList = [];
 
+    // ONLY COUNT STUDENTS WHOSE COMPLETED MONTH CYCLES ARE UNPAID (dueStatus === 'OVERDUE')!
     students.forEach(student => {
       const fin = this.calculateStudentFinancials(student.id, referenceDate);
       if (fin && fin.totalCurrentDue > 0 && fin.dueStatus === 'OVERDUE') {
