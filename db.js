@@ -263,6 +263,7 @@ class DBService {
       paid_amount: Number(paymentData.paid_amount),
       remaining_amount: Number(paymentData.remaining_amount || 0),
       year: Number(paymentData.year),
+      payment_mode: paymentData.payment_mode || 'Cash',
       payment_date: paymentData.payment_date || new Date().toISOString()
     };
     payments.push(newPayment);
@@ -270,7 +271,7 @@ class DBService {
     return newPayment;
   }
 
-  // --- 1-Month Cycle Date-Based Financial Engine ---
+  // --- Financial Engine with Left Student Dues Persistence & Exact Payment Timestamp Audit ---
   calculateStudentFinancials(studentId, referenceDate = new Date()) {
     const student = this.getStudentById(studentId);
     if (!student) return null;
@@ -288,7 +289,6 @@ class DBService {
     let startM = joiningDate.getMonth();
 
     while (startY < refYear || (startY === refYear && startM <= refMonthIdx)) {
-      // For current month, include in due cycle only if current date >= joining date anniversary!
       const isPastMonth = (startY < refYear) || (startY === refYear && startM < refMonthIdx);
       const isCurrentMonthCycleComplete = (startY === refYear && startM === refMonthIdx && refDay >= joiningDay);
 
@@ -307,16 +307,20 @@ class DBService {
       }
     }
 
-    const totalPaidPool = payments.reduce((sum, p) => sum + Number(p.paid_amount || 0), 0);
-    let remainingPaidPool = totalPaidPool;
-
+    // Allocate payment pool and map timestamps
     const monthDetails = [];
+    let remainingPaidPool = payments.reduce((sum, p) => sum + Number(p.paid_amount || 0), 0);
 
-    billingMonths.forEach(bm => {
+    billingMonths.forEach((bm, idx) => {
       const baseFee = student.monthly_fee;
       let paidThisMonth = 0;
       let remainingThisMonth = baseFee;
       let isPaid = false;
+
+      let matchingPmt = payments.find(p => p.year === bm.year && p.month === bm.monthName);
+      if (!matchingPmt && payments.length > idx) {
+        matchingPmt = payments[idx];
+      }
 
       if (remainingPaidPool >= baseFee) {
         paidThisMonth = baseFee;
@@ -330,13 +334,18 @@ class DBService {
         remainingPaidPool = 0;
       }
 
+      const pmtDateRaw = matchingPmt ? (matchingPmt.payment_date || matchingPmt.created_at) : null;
+      const pmtMode = matchingPmt ? matchingPmt.payment_mode : 'Cash';
+
       monthDetails.push({
         year: bm.year,
         monthName: bm.monthName,
         baseFee,
         paidAmount: paidThisMonth,
         remainingBalance: remainingThisMonth,
-        isPaid
+        isPaid,
+        paymentDate: pmtDateRaw ? this.formatDisplayDate(pmtDateRaw) : null,
+        paymentMode: pmtMode
       });
     });
 
@@ -370,6 +379,14 @@ class DBService {
     };
   }
 
+  formatDisplayDate(isoStr) {
+    if (!isoStr) return '';
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return isoStr;
+    const monthsShort = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${d.getDate()} ${monthsShort[d.getMonth()]} ${d.getFullYear()}`;
+  }
+
   getDashboardMetrics(referenceDate = new Date()) {
     const students = this.getStudents();
     const payments = this.getPayments();
@@ -397,7 +414,8 @@ class DBService {
     let totalAggregateDue = 0;
     const pendingStudentsList = [];
 
-    activeStudentsList.forEach(student => {
+    // Check ALL students (Active AND Left) so Left students with pending fees stay in the Pending Dues system until paid!
+    students.forEach(student => {
       const fin = this.calculateStudentFinancials(student.id, referenceDate);
       if (fin && fin.totalCurrentDue > 0) {
         pendingStudentsCount++;

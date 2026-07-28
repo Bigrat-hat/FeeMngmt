@@ -201,7 +201,7 @@ window.closeModal = function() {
   renderActiveModal();
 };
 
-// --- 1. Dashboard View (Real-Time Dynamic Month & Year) ---
+// --- 1. Dashboard View ---
 function renderDashboardView(metrics) {
   const now = new Date();
   const currentMonthName = MONTH_NAMES[now.getMonth()];
@@ -377,20 +377,20 @@ function renderStudentCardListHTML(students) {
     const isDiscontinued = s.status === 'Left' || s.status === 'Session Closed';
 
     return `
-      <div class="student-card-item" onclick="openModal('student-profile', ${s.id})" style="${isDiscontinued ? 'opacity:0.75; background:rgba(240,247,244,0.7);' : ''}">
+      <div class="student-card-item" onclick="openModal('student-profile', ${s.id})" style="${isDiscontinued ? 'opacity:0.85; background:rgba(254,242,242,0.85); border:1px solid rgba(220,38,38,0.3);' : ''}">
         <div style="display:flex; align-items:center; gap:10px;">
           <span class="student-avatar">${avatar}</span>
           <div>
             <div style="font-size:13px; font-weight:700; color:var(--emerald-950); display:flex; align-items:center; gap:6px;">
               ${s.name}
-              ${s.status === 'Left' ? '<span class="badge badge-due" style="font-size:8px;">LEFT</span>' : ''}
+              ${s.status === 'Left' ? '<span class="badge badge-due" style="font-size:8px; background:rgba(220,38,38,0.15); color:#DC2626;">LEFT</span>' : ''}
               ${s.status === 'Session Closed' ? '<span class="badge badge-closed" style="font-size:8px;">CLOSED</span>' : ''}
             </div>
             <div style="font-size:10px; color:var(--emerald-600);">${s.class} • ₹${s.monthly_fee}/mo ${s.school ? '• ' + s.school : ''}</div>
           </div>
         </div>
         <div style="text-align:right;">
-          ${isDiscontinued ? `<span class="badge badge-closed">${s.status.toUpperCase()}</span>` : renderStatusBadge(fin.dueStatus, fin.totalCurrentDue)}
+          ${renderStatusBadge(fin.dueStatus, fin.totalCurrentDue)}
         </div>
       </div>
     `;
@@ -423,9 +423,9 @@ function renderStatusBadge(status, dueAmount) {
   }
 }
 
-// --- 3. Collect Fees View (Real-time Month & Year Defaults) ---
+// --- 3. Collect Fees View ---
 function renderCollectFeesView(students) {
-  const activeStudents = students.filter(s => s.status === 'Active');
+  const activeStudents = students.filter(s => s.status === 'Active' || (s.status === 'Left' && db.calculateStudentFinancials(s.id).totalCurrentDue > 0));
   const selectedStudent = selectedStudentForCollect ? db.getStudentById(selectedStudentForCollect) : activeStudents[0];
   const fin = selectedStudent ? db.calculateStudentFinancials(selectedStudent.id) : null;
 
@@ -442,7 +442,7 @@ function renderCollectFeesView(students) {
         <select class="form-control" onchange="onStudentSelectForCollect(this.value)">
           ${activeStudents.map(s => `
             <option value="${s.id}" ${selectedStudent && selectedStudent.id === s.id ? 'selected' : ''}>
-              ${s.name} (${s.class})
+              ${s.name} (${s.class}) ${s.status === 'Left' ? '[LEFT - Unpaid Dues]' : ''}
             </option>
           `).join('')}
         </select>
@@ -530,7 +530,8 @@ window.handleFeeCollection = function(event) {
     monthly_fee: fin.student.monthly_fee,
     paid_amount: paidAmount,
     remaining_amount: remaining,
-    payment_mode: paymentMode
+    payment_mode: paymentMode,
+    payment_date: new Date().toISOString()
   });
 
   receiptData = {
@@ -570,9 +571,8 @@ function renderCalendarGridDays(students) {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonthIdx = now.getMonth();
-  const todayDateNumber = now.getDate(); // Real-time today's day number!
+  const todayDateNumber = now.getDate();
 
-  // Dynamic calculation of starting day offset and total days in month
   const firstDayOfWeek = new Date(currentYear, currentMonthIdx, 1).getDay();
   const totalDaysInMonth = new Date(currentYear, currentMonthIdx + 1, 0).getDate();
 
@@ -582,7 +582,7 @@ function renderCalendarGridDays(students) {
   }
 
   for (let day = 1; day <= totalDaysInMonth; day++) {
-    const isToday = (day === todayDateNumber); // Real-time Today check!
+    const isToday = (day === todayDateNumber);
     const dueStudents = students.filter(s => s.status === 'Active' && new Date(s.joining_date).getDate() === day);
     const hasDue = dueStudents.length > 0;
 
@@ -606,7 +606,7 @@ function renderActiveModal() {
     return;
   }
 
-  // Modal 1: Add Student (Default joining_date to today's real current date!)
+  // Modal 1: Add Student
   if (activeModal === 'add-student') {
     const todayDateStr = new Date().toISOString().split('T')[0];
 
@@ -814,12 +814,12 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 4: Student Profile Drawer
+  // Modal 4: Student Profile Drawer (Displaying Exact Payment Dates & Persistent Left Dues)
   else if (activeModal === 'student-profile' && profileStudentId) {
     const fin = db.calculateStudentFinancials(profileStudentId);
     if (!fin) return;
     const avatar = fin.student.gender === 'Female' ? '👧' : '👦';
-    const isDiscontinued = fin.student.status === 'Left' || fin.student.status === 'Session Closed';
+    const isLeft = fin.student.status === 'Left';
 
     container.innerHTML = `
       <div class="modal-overlay" onclick="closeModal()">
@@ -830,7 +830,7 @@ function renderActiveModal() {
               <div>
                 <h3 class="modal-title">${fin.student.name}</h3>
                 <div style="font-size:10px; color:var(--emerald-600);">
-                  ${fin.student.class} ${fin.student.board ? '• ' + fin.student.board : ''} ${fin.student.status !== 'Active' ? '• ' + fin.student.status : ''}
+                  ${fin.student.class} ${fin.student.board ? '• ' + fin.student.board : ''} ${fin.student.status !== 'Active' ? '• STATUS: ' + fin.student.status.toUpperCase() : ''}
                 </div>
               </div>
             </div>
@@ -840,29 +840,31 @@ function renderActiveModal() {
             </div>
           </div>
 
-          <div class="formula-box" style="margin-top:4px; margin-bottom:12px;">
+          <div class="formula-box" style="margin-top:4px; margin-bottom:12px; ${isLeft && fin.totalCurrentDue > 0 ? 'background:rgba(254,242,242,0.95); border-left-color:#DC2626;' : ''}">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
                 <span style="font-size:10px; color:var(--emerald-600);">Monthly Fee: ₹${fin.student.monthly_fee} • Joined: ${fin.student.joining_date}</span>
-                <div style="font-size:15px; font-weight:800; color:var(--emerald-950);">Total Outstanding Dues</div>
+                <div style="font-size:15px; font-weight:800; color:${isLeft && fin.totalCurrentDue > 0 ? '#DC2626' : 'var(--emerald-950)'};">
+                  ${isLeft ? 'Outstanding Left Dues (Saved)' : 'Total Outstanding Dues'}
+                </div>
               </div>
               <div style="font-size:20px; font-weight:800; color:${fin.totalCurrentDue === 0 ? '#254B33' : 'var(--status-overdue-text)'};">₹${fin.totalCurrentDue}</div>
             </div>
           </div>
 
-          <h4 style="font-size:11px; font-weight:800; color:var(--emerald-800); margin-bottom:6px;">Month-by-Month Fee Audit</h4>
+          <h4 style="font-size:11px; font-weight:800; color:var(--emerald-800); margin-bottom:6px;">Month-by-Month Payment Audit</h4>
           
-          <div style="max-height:180px; overflow-y:auto; margin-bottom:12px;">
+          <div style="max-height:190px; overflow-y:auto; margin-bottom:12px;">
             ${fin.billingMonths.map(bm => `
               <div class="month-pending-row">
                 <div>
                   <strong>${bm.monthName} ${bm.year}</strong>
-                  <div style="font-size:9px; color:var(--emerald-600);">Monthly Baseline Fee: ₹${bm.baseFee}</div>
+                  <div style="font-size:9px; color:var(--emerald-600);">Baseline Fee: ₹${bm.baseFee}</div>
                 </div>
                 <div>
                   ${bm.isPaid ? 
-                    '<span class="badge badge-paid">✓ PAID (₹' + bm.baseFee + ')</span>' : 
-                    '<span class="badge badge-overdue">🔴 PENDING ₹' + bm.remainingBalance + '</span>'
+                    `<span class="badge badge-paid">✓ PAID (₹${bm.baseFee}) ${bm.paymentDate ? '• ' + bm.paymentDate + ' (' + bm.paymentMode + ')' : ''}</span>` : 
+                    `<span class="badge badge-overdue">🔴 PENDING ₹${bm.remainingBalance}</span>`
                   }
                 </div>
               </div>
@@ -870,11 +872,9 @@ function renderActiveModal() {
           </div>
 
           <div style="display:flex; gap:8px;">
-            ${!isDiscontinued ? `
-              <button class="btn-primary" style="flex:1; padding:10px;" onclick="closeModal(); switchTab('collect'); onStudentSelectForCollect(${fin.student.id});">
-                💳 Collect Fee
-              </button>
-            ` : ''}
+            <button class="btn-primary" style="flex:1; padding:10px;" onclick="closeModal(); switchTab('collect'); onStudentSelectForCollect(${fin.student.id});">
+              💳 Collect Fee
+            </button>
             <button class="btn-secondary" style="border-color:var(--status-overdue-text); color:var(--status-overdue-text); padding:10px;" onclick="handleDeleteStudent(${fin.student.id})">
               🗑️ Delete Student
             </button>
@@ -884,7 +884,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 5: Dynamic Calendar Day Details Bottom Sheet
+  // Modal 5: Calendar Day Details Bottom Sheet
   else if (activeModal === 'calendar-day' && selectedCalendarDay) {
     const students = db.getStudents();
     const dueStudents = students.filter(s => s.status === 'Active' && new Date(s.joining_date).getDate() === selectedCalendarDay);
@@ -953,11 +953,14 @@ function renderActiveModal() {
 
           <div style="max-height:260px; overflow-y:auto; margin-bottom:14px;">
             ${metrics.pendingStudentsList.map(item => `
-              <div class="student-card-item" onclick="closeModal(); openModal('student-profile', ${item.student.id});" style="margin-bottom:8px;">
+              <div class="student-card-item" onclick="closeModal(); openModal('student-profile', ${item.student.id});" style="margin-bottom:8px; ${item.student.status === 'Left' ? 'background:rgba(254,242,242,0.85); border:1px solid rgba(220,38,38,0.3);' : ''}">
                 <div style="display:flex; align-items:center; gap:8px;">
                   <span class="student-avatar">${item.student.gender === 'Female' ? '👧' : '👦'}</span>
                   <div>
-                    <div style="font-size:12px; font-weight:700; color:var(--emerald-950);">${item.student.name}</div>
+                    <div style="font-size:12px; font-weight:700; color:var(--emerald-950); flex-wrap:wrap; display:flex; align-items:center; gap:4px;">
+                      ${item.student.name}
+                      ${item.student.status === 'Left' ? '<span class="badge badge-due" style="font-size:8px; background:rgba(220,38,38,0.15); color:#DC2626;">LEFT</span>' : ''}
+                    </div>
                     <div style="font-size:10px; color:var(--emerald-600);">${item.student.class}</div>
                   </div>
                 </div>
@@ -991,6 +994,9 @@ function renderActiveModal() {
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
               <span>Period:</span><strong>${receiptData.payment.month} ${receiptData.payment.year}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+              <span>Payment Date:</span><strong style="color:var(--emerald-950);">${db.formatDisplayDate(receiptData.payment.payment_date)} (${receiptData.payment.payment_mode})</strong>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
               <span>Paid Amount:</span><strong style="font-size:13px; color:#254B33;">₹${receiptData.payment.paid_amount}</strong>
