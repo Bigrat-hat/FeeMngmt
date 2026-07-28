@@ -12,13 +12,28 @@ let selectedBoardForList = null;
 let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'board-list', 'calendar-day', 'receipt'
 let receiptData = null;
 
-// Initialize Application, PWA Service Worker & Back Button Lock
+// Track last rendered day number for real-time midnight auto-update
+let lastRenderedDayNumber = new Date().getDate();
+
+// Initialize Application, PWA Service Worker, Back Button Lock & Real-Time Midnight Clock
 document.addEventListener('DOMContentLoaded', () => {
   initHistoryLock();
   renderCurrentTab();
   updateNavActiveState();
   initPWA();
+  initMidnightRealtimeClock();
 });
+
+// Real-Time Midnight Auto-Update Clock (Auto-advances calendar highlight at 12:00 AM midnight)
+function initMidnightRealtimeClock() {
+  setInterval(() => {
+    const currentDayNumber = new Date().getDate();
+    if (currentDayNumber !== lastRenderedDayNumber) {
+      lastRenderedDayNumber = currentDayNumber;
+      renderCurrentTab(); // Auto-refresh today's highlight & metrics at midnight!
+    }
+  }, 15000); // Checks every 15 seconds
+}
 
 // PWA Back Button Lock
 function initHistoryLock() {
@@ -814,7 +829,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 4: Student Profile Drawer (Displaying Exact Payment Dates & Persistent Left Dues)
+  // Modal 4: Student Profile Drawer
   else if (activeModal === 'student-profile' && profileStudentId) {
     const fin = db.calculateStudentFinancials(profileStudentId);
     if (!fin) return;
