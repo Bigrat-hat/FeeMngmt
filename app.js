@@ -379,11 +379,12 @@ function renderDashboardView(metrics) {
       </button>
     </div>
 
-    <!-- Carry Forward Formula Highlight -->
+    <!-- Live Date Rollover & Advance Fulfillment Rule Highlight -->
     <div class="formula-box">
-      <div class="formula-title">💡 Joining Date Cycle Rule</div>
+      <div class="formula-title">✨ Smart Live Cycle Rollover & Advance Credit Rule</div>
       <div class="formula-text">
-        Every student's 1-month tuition cycle starts from their exact <strong>Date of Joining</strong>. Next payment is due on the same day next month!
+        1. Monthly cycles automatically progress based on live current date.<br/>
+        2. Early/advance payments go into <strong>Advance Credit</strong> and automatically debit to fulfill fee as soon as next cycle rolls over!
       </div>
     </div>
 
@@ -484,6 +485,11 @@ function renderStudentCardListHTML(students) {
         </div>
         <div style="text-align:right;">
           ${renderStatusBadge(fin.dueStatus, fin.totalCurrentDue, fin.cycleNextRenewal)}
+          ${fin.advanceBalance > 0 ? `
+            <div style="font-size:9px; color:#254B33; font-weight:800; margin-top:3px; background:rgba(37,75,51,0.12); padding:2px 6px; border-radius:6px; border:1px solid rgba(37,75,51,0.3); display:inline-block;">
+              ✨ Adv: ₹${fin.advanceBalance}
+            </div>
+          ` : ''}
           ${fin.unpaidKhataTotal > 0 ? `
             <div style="font-size:9px; color:#DC2626; font-weight:800; margin-top:3px; background:rgba(220,38,38,0.1); padding:2px 6px; border-radius:6px; border:1px solid rgba(220,38,38,0.3); display:inline-block;">
               🔴 Khata: ₹${fin.unpaidKhataTotal}
@@ -582,7 +588,7 @@ function renderCollectFeesView(students) {
 
           <div class="form-group">
             <label class="form-label">Paying Fee Amount (₹)</label>
-            <input type="number" name="paid_amount" class="form-control" value="${fin.totalCurrentDue}" min="0" required />
+            <input type="number" name="paid_amount" class="form-control" value="${fin.totalCurrentDue > 0 ? fin.totalCurrentDue : fin.student.monthly_fee}" min="0" required />
           </div>
 
           <div class="form-group">
@@ -1260,7 +1266,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 6: Student Profile Drawer (Crystal Clear Coaching Cycle UI)
+  // Modal 6: Student Profile Drawer (Crystal Clear Coaching Cycle UI with Advance Auto-Fulfillment)
   else if (activeModal === 'student-profile' && profileStudentId) {
     const fin = db.calculateStudentFinancials(profileStudentId);
     if (!fin) return;
@@ -1300,6 +1306,16 @@ function renderActiveModal() {
               </div>
               <div style="font-size:20px; font-weight:800; color:${isOverdue ? '#DC2626' : fin.totalCurrentDue === 0 ? '#254B33' : 'var(--emerald-950)'};">₹${fin.totalCurrentDue}</div>
             </div>
+
+            ${fin.advanceBalance > 0 ? `
+              <div style="margin-top:6px; padding:6px 10px; background:rgba(37,75,51,0.12); border:1px solid rgba(37,75,51,0.3); border-radius:10px; font-size:10px; color:#254B33; font-weight:800; display:flex; justify-content:space-between; align-items:center;">
+                <span>✨ Advance Credit Pool (Early Payment):</span>
+                <span style="font-size:12px;">₹${fin.advanceBalance}</span>
+              </div>
+              <div style="font-size:8px; color:var(--emerald-600); margin-top:2px; font-weight:700;">
+                💡 Automatically debits & fulfills fee as soon as next cycle rolls over!
+              </div>
+            ` : ''}
           </div>
 
           <!-- Simple, Crystal Clear Coaching Cycle Card -->

@@ -323,7 +323,7 @@ class DatabaseEngine {
     return null;
   }
 
-  // --- REFINED CRYSTAL-CLEAR COACHING CYCLE FINANCIAL ENGINE ---
+  // --- REAL-TIME LIVE CYCLE ROLLOVER & ADVANCE CREDIT AUTO-FULFILLMENT ENGINE ---
   calculateStudentFinancials(studentId, referenceDate = new Date()) {
     const student = this.getStudentById(studentId);
     if (!student) return null;
@@ -336,52 +336,67 @@ class DatabaseEngine {
 
     const joiningDate = new Date(student.joining_date);
 
-    // Total tuition fee paid by student
+    // Total tuition fee paid pool
     const totalPaidPool = payments.reduce((sum, p) => sum + Number(p.paid_amount || 0), 0);
     const monthsPaid = Math.floor(totalPaidPool / student.monthly_fee);
 
-    // Calculate exact Next Due Date = joining_date + (monthsPaid + 1) months!
-    const nextDueDate = this.addMonthsToDate(joiningDate, monthsPaid + 1);
-    
-    // Calculate current cycle start date = joining_date + monthsPaid months
-    const cycleStartDate = this.addMonthsToDate(joiningDate, monthsPaid);
+    // 1. Elapsed full 1-month cycles based on live date
+    let elapsedCycles = (referenceDate.getFullYear() - joiningDate.getFullYear()) * 12 + (referenceDate.getMonth() - joiningDate.getMonth());
+    if (referenceDate.getDate() < joiningDate.getDate()) {
+      elapsedCycles--;
+    }
+    elapsedCycles = Math.max(0, elapsedCycles);
 
-    const cyclePeriodStr = `${this.formatDisplayDate(cycleStartDate.toISOString())} ➔ ${this.formatDisplayDate(nextDueDate.toISOString())}`;
+    // 2. Active Cycle Dates (Starts on elapsedCycles, ends on elapsedCycles + 1)
+    const activeCycleStart = this.addMonthsToDate(joiningDate, elapsedCycles);
+    const activeCycleEnd = this.addMonthsToDate(joiningDate, elapsedCycles + 1);
+
+    // 3. Next Fee Due Date (determined by total paid months!)
+    const nextDueDate = this.addMonthsToDate(joiningDate, monthsPaid + 1);
+
+    const cyclePeriodStr = `${this.formatDisplayDate(activeCycleStart.toISOString())} ➔ ${this.formatDisplayDate(activeCycleEnd.toISOString())}`;
     const nextDueStr = this.formatDisplayDate(nextDueDate.toISOString());
 
-    // Completed 1-month billing cycles since joining
-    let elapsedMonths = (referenceDate.getFullYear() - joiningDate.getFullYear()) * 12 + (referenceDate.getMonth() - joiningDate.getMonth());
-    if (referenceDate.getDate() < joiningDate.getDate()) {
-      elapsedMonths--;
-    }
-    elapsedMonths = Math.max(0, elapsedMonths);
-
-    // Total fee accumulated up to current active cycle
-    const accumulatedRequiredFee = (elapsedMonths + 1) * student.monthly_fee;
+    // Fee requirements
+    const pastRequiredFee = elapsedCycles * student.monthly_fee;
+    const activeRequiredFee = (elapsedCycles + 1) * student.monthly_fee;
 
     let dueStatus = 'UPCOMING';
     let totalCurrentDue = 0;
+    let advanceBalance = 0;
 
     const refDayZero = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate());
-    const nextDueDayZero = new Date(nextDueDate.getFullYear(), nextDueDate.getMonth(), nextDueDate.getDate());
+    const activeEndDayZero = new Date(activeCycleEnd.getFullYear(), activeCycleEnd.getMonth(), activeCycleEnd.getDate());
 
-    if (totalPaidPool >= accumulatedRequiredFee) {
+    if (totalPaidPool >= activeRequiredFee) {
+      // Current cycle is fully paid (plus potential extra advance credit!)
       dueStatus = 'PAID';
       totalCurrentDue = 0;
-    } else if (refDayZero < nextDueDayZero) {
-      // Student is inside active month cycle before next due date!
-      dueStatus = (refDayZero.getTime() === joiningDate.getTime() && totalPaidPool === 0) ? 'DUE TODAY' : 'UPCOMING';
-      totalCurrentDue = student.monthly_fee - (totalPaidPool % student.monthly_fee);
+      advanceBalance = totalPaidPool - activeRequiredFee;
+    } else if (totalPaidPool >= pastRequiredFee) {
+      // Past cycles paid! Student is currently in active month cycle.
+      advanceBalance = totalPaidPool - pastRequiredFee; // Advance money paid towards current/future cycle
+      const remainingActiveFee = activeRequiredFee - totalPaidPool;
+
+      if (refDayZero < activeEndDayZero) {
+        dueStatus = (refDayZero.getTime() === activeCycleStart.getTime() && totalPaidPool === 0) ? 'DUE TODAY' : 'UPCOMING';
+        totalCurrentDue = remainingActiveFee;
+      } else {
+        // Date reached cycle end date -> Overdue!
+        dueStatus = 'OVERDUE';
+        totalCurrentDue = remainingActiveFee;
+      }
     } else {
-      // Past next due date -> OVERDUE (Pending Dues)!
+      // Unpaid past cycles -> Overdue!
       dueStatus = 'OVERDUE';
-      totalCurrentDue = accumulatedRequiredFee - totalPaidPool;
+      totalCurrentDue = activeRequiredFee - totalPaidPool;
+      advanceBalance = 0;
     }
 
-    // Build Month-by-Month Baseline Audit
-    const totalCyclesToAudit = Math.max(1, elapsedMonths + 1);
+    // Build Month-by-Month Baseline Cycle Breakdown with Advance Auto-Fulfillment
+    const totalCyclesToAudit = Math.max(1, elapsedCycles + 1);
     const monthDetails = [];
-    let remainingPaidPool = totalPaidPool;
+    let remPaidPool = totalPaidPool;
 
     for (let i = 0; i < totalCyclesToAudit; i++) {
       const cycleStart = this.addMonthsToDate(joiningDate, i);
@@ -392,16 +407,20 @@ class DatabaseEngine {
       let paidThisCycle = 0;
       let remainingThisCycle = baseFee;
 
-      if (remainingPaidPool >= baseFee) {
+      if (remPaidPool >= baseFee) {
         paidThisCycle = baseFee;
         remainingThisCycle = 0;
         isPaid = true;
-        remainingPaidPool -= baseFee;
+        remPaidPool -= baseFee;
+      } else if (remPaidPool > 0) {
+        paidThisCycle = remPaidPool;
+        remainingThisCycle = Math.max(0, baseFee - remPaidPool);
+        isPaid = false;
+        remPaidPool = 0;
       } else {
-        paidThisCycle = remainingPaidPool;
-        remainingThisCycle = Math.max(0, baseFee - remainingPaidPool);
-        isPaid = (remainingThisCycle === 0);
-        remainingPaidPool = 0;
+        paidThisCycle = 0;
+        remainingThisCycle = baseFee;
+        isPaid = false;
       }
 
       const cycleLabel = `${this.formatDisplayDate(cycleStart.toISOString())} - ${this.formatDisplayDate(cycleEnd.toISOString())}`;
@@ -413,7 +432,8 @@ class DatabaseEngine {
         baseFee,
         paidAmount: paidThisCycle,
         remainingBalance: remainingThisCycle,
-        isPaid
+        isPaid,
+        cycleEnd
       });
     }
 
@@ -422,11 +442,12 @@ class DatabaseEngine {
       billingMonths: monthDetails,
       totalPaidPool,
       fullMonthsPaidCount: monthsPaid,
-      completedCyclesCount: elapsedMonths,
+      completedCyclesCount: elapsedCycles,
       cyclePeriodStr,
       cycleNextRenewal: nextDueStr,
       totalCurrentDue,
       dueStatus,
+      advanceBalance,
       unpaidKhataItems,
       unpaidKhataTotal,
       extraCharges
