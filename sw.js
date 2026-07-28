@@ -1,21 +1,8 @@
-const CACHE_NAME = 'anshu-coaching-v1';
-const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './index.css',
-  './app.js',
-  './db.js',
-  './manifest.json',
-  'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap',
-  'https://cdn.jsdelivr.net/npm/chart.js'
-];
+const CACHE_NAME = 'anshu-coaching-v3';
 
+// Force Service Worker to activate immediately on updates
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    }).then(() => self.skipWaiting())
-  );
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
@@ -24,7 +11,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
+            return caches.delete(cache); // Delete old cached JS/CSS version!
           }
         })
       );
@@ -32,10 +19,19 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Network-First strategy: Always fetch latest code updates from Vercel/Netlify first!
 self.addEventListener('fetch', (event) => {
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request).catch(() => caches.match('./index.html'));
-    })
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return networkResponse;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
