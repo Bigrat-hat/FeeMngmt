@@ -9,8 +9,12 @@ let profileStudentId = null;
 let editStudentId = null;
 let selectedCalendarDay = null;
 let selectedBoardForList = null;
-let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'board-list', 'calendar-day', 'receipt', 'add-khata', 'backup-restore'
+let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'board-list', 'calendar-day', 'receipt', 'add-khata', 'backup-restore', 'clear-khata-modal', 'custom-alert-modal'
 let receiptData = null;
+
+// Custom In-App Modal State (Replaces all browser native alerts/confirms!)
+let activeKhataItemToClear = null; // { chargeId, item_name, amount, student_name }
+let customAlertState = null; // { title, message, isConfirm, onConfirmCallback }
 
 // Interactive Calendar Month & Year Navigation State (Defaults to current live month & year!)
 let calendarViewYear = new Date().getFullYear();
@@ -27,6 +31,26 @@ document.addEventListener('DOMContentLoaded', () => {
   initPWA();
   initMidnightRealtimeClock();
 });
+
+// Custom In-App Alert System (Replaces window.alert and window.confirm)
+window.showAppAlert = function(title, message) {
+  customAlertState = {
+    title: title || 'Notice',
+    message: message || '',
+    isConfirm: false
+  };
+  openModal('custom-alert-modal');
+};
+
+window.showAppConfirm = function(title, message, onConfirmCallback) {
+  customAlertState = {
+    title: title || 'Confirmation',
+    message: message || '',
+    isConfirm: true,
+    onConfirmCallback
+  };
+  openModal('custom-alert-modal');
+};
 
 // Real-Time Midnight Auto-Update Clock
 function initMidnightRealtimeClock() {
@@ -186,12 +210,12 @@ window.handleAdminLoginSubmit = function(e) {
 };
 
 window.handleAdminLogout = function() {
-  if (confirm('Log out from Anshu Coaching Admin Portal?')) {
+  showAppConfirm('Logout Confirmation', 'Are you sure you want to log out from Anshu Coaching Admin Portal?', () => {
     isLoggedIn = false;
     localStorage.removeItem('anshu_admin_logged_in');
     currentTab = 'dashboard';
     renderCurrentTab();
-  }
+  });
 };
 
 // Modal Trigger Helpers
@@ -211,6 +235,9 @@ window.openModal = function(modalName, payload = null) {
   }
   if (modalName === 'board-list' && payload) {
     selectedBoardForList = payload;
+  }
+  if (modalName === 'clear-khata-modal' && payload) {
+    activeKhataItemToClear = payload;
   }
   if (modalName === 'receipt' && payload) {
     if (typeof payload === 'object') {
@@ -238,6 +265,7 @@ window.closeModal = function() {
   editStudentId = null;
   selectedCalendarDay = null;
   selectedBoardForList = null;
+  activeKhataItemToClear = null;
   receiptData = null;
   renderActiveModal();
 };
@@ -394,7 +422,7 @@ function initDashboardCharts() {
   });
 }
 
-// --- 2. Students Directory View ---
+// --- 2. Students Directory View (Shows Unpaid Khata Amount in Red Directly on Row!) ---
 function renderStudentsView(students) {
   return `
     <!-- Search Pill -->
@@ -443,7 +471,11 @@ function renderStudentCardListHTML(students) {
         </div>
         <div style="text-align:right;">
           ${renderStatusBadge(fin.dueStatus, fin.totalCurrentDue)}
-          ${fin.unpaidKhataTotal > 0 ? `<div style="font-size:9px; color:#DC2626; font-weight:800; margin-top:2px;">🔴 Khata: ₹${fin.unpaidKhataTotal}</div>` : ''}
+          ${fin.unpaidKhataTotal > 0 ? `
+            <div style="font-size:9px; color:#DC2626; font-weight:800; margin-top:3px; background:rgba(220,38,38,0.1); padding:2px 6px; border-radius:6px; border:1px solid rgba(220,38,38,0.3); display:inline-block;">
+              🔴 Khata: ₹${fin.unpaidKhataTotal}
+            </div>
+          ` : ''}
         </div>
       </div>
     `;
@@ -476,7 +508,7 @@ function renderStatusBadge(status, dueAmount) {
   }
 }
 
-// --- 3. Collect Fees View + Preset Chips ---
+// --- 3. Collect Fees View (Tuition Fee Collection Only) ---
 function renderCollectFeesView(students) {
   const activeStudents = students.filter(s => s.status === 'Active' || (s.status === 'Left' && db.calculateStudentFinancials(s.id).totalCurrentDue > 0));
   const selectedStudent = selectedStudentForCollect ? db.getStudentById(selectedStudentForCollect) : activeStudents[0];
@@ -539,28 +571,6 @@ function renderCollectFeesView(students) {
             <input type="number" name="paid_amount" class="form-control" value="${fin.totalCurrentDue}" min="0" required />
           </div>
 
-          <!-- Admin Extra Charges Section (Stationery / Stuff) -->
-          <div class="form-group" style="padding:10px; background:var(--emerald-50); border:1px dashed var(--card-border); border-radius:14px; margin-bottom:12px;">
-            <label class="form-label" style="color:var(--emerald-950); display:flex; justify-content:space-between; align-items:center;">
-              <span>🛍️ Add Extra Charges / Stationery (Optional)</span>
-              <span style="font-size:9px; color:var(--emerald-600);">Rough book, Pen, Copy, etc.</span>
-            </label>
-
-            <!-- Quick Presets -->
-            <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;">
-              <button type="button" class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="applyStationeryPreset('Rough Book', 50)">📘 Rough Book (₹50)</button>
-              <button type="button" class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="applyStationeryPreset('Copy', 40)">📓 Copy (₹40)</button>
-              <button type="button" class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="applyStationeryPreset('Pen', 10)">🖊️ Pen (₹10)</button>
-              <button type="button" class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="applyStationeryPreset('Pouch', 60)">🎒 Pouch (₹60)</button>
-              <button type="button" class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="applyStationeryPreset('Notes', 100)">📚 Notes (₹100)</button>
-            </div>
-
-            <div style="display:grid; grid-template-columns:2fr 1fr; gap:6px;">
-              <input type="text" id="extra_item_name" name="extra_item_name" class="form-control" placeholder="Item Name (e.g. Rough Book)" />
-              <input type="number" id="extra_charge_amount" name="extra_charge_amount" class="form-control" placeholder="Amt (₹)" min="0" value="0" />
-            </div>
-          </div>
-
           <div class="form-group">
             <label class="form-label">Payment Mode</label>
             <div style="display:flex; gap:16px; margin-top:2px;">
@@ -606,15 +616,6 @@ function renderCollectFeesView(students) {
   `;
 }
 
-window.applyStationeryPreset = function(itemName, price) {
-  const nameInput = document.getElementById('extra_item_name');
-  const priceInput = document.getElementById('extra_charge_amount');
-  if (nameInput && priceInput) {
-    nameInput.value = itemName;
-    priceInput.value = price;
-  }
-};
-
 window.onStudentSelectForCollect = function(studentId) {
   selectedStudentForCollect = studentId;
   renderCurrentTab();
@@ -627,14 +628,10 @@ window.handleFeeCollection = function(event) {
   const month = form.month.value;
   const year = form.year.value;
   const paidAmount = Number(form.paid_amount.value || 0);
-  const extraItemName = form.extra_item_name ? form.extra_item_name.value.trim() : '';
-  const extraChargeAmount = form.extra_charge_amount ? Number(form.extra_charge_amount.value || 0) : 0;
   const paymentMode = form.payment_mode.value;
 
-  const totalCollection = paidAmount + extraChargeAmount;
-
-  if (totalCollection <= 0) {
-    alert('⚠️ Cannot generate receipt for ₹0 collection. Please enter a valid payment amount or extra charges.');
+  if (paidAmount <= 0) {
+    showAppAlert('Collection Warning', 'Cannot generate receipt for ₹0 payment. Please enter a valid fee amount.');
     return;
   }
 
@@ -660,8 +657,8 @@ window.handleFeeCollection = function(event) {
     paid_amount: paidAmount,
     remaining_amount: remaining,
     advance_amount: advance,
-    extra_item_name: extraItemName,
-    extra_charge_amount: extraChargeAmount,
+    extra_item_name: '',
+    extra_charge_amount: 0,
     payment_mode: paymentMode,
     payment_date: new Date().toISOString()
   });
@@ -838,8 +835,90 @@ function renderActiveModal() {
     return;
   }
 
+  // Modal: Custom Glassmorphic In-App Alert / Confirm Sheet
+  if (activeModal === 'custom-alert-modal' && customAlertState) {
+    container.innerHTML = `
+      <div class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+          <div class="modal-header">
+            <h3 class="modal-title">${customAlertState.title}</h3>
+            <button class="close-btn" onclick="closeModal()">✕</button>
+          </div>
+
+          <div style="font-size:12px; color:var(--emerald-950); margin-bottom:16px; line-height:1.4;">
+            ${customAlertState.message}
+          </div>
+
+          <div style="display:flex; gap:8px;">
+            ${customAlertState.isConfirm ? `
+              <button class="btn-primary" style="flex:1; padding:10px;" onclick="executeCustomConfirm()">
+                Confirm & Proceed
+              </button>
+              <button class="btn-secondary" style="flex:1; padding:10px;" onclick="closeModal()">
+                Cancel
+              </button>
+            ` : `
+              <button class="btn-primary" style="width:100%; padding:10px;" onclick="closeModal()">
+                OK
+              </button>
+            `}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Modal: Clear Khata Item Selection Sheet (Payment Mode Selection inside App!)
+  else if (activeModal === 'clear-khata-modal' && activeKhataItemToClear) {
+    container.innerHTML = `
+      <div class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+          <div class="modal-header">
+            <h3 class="modal-title">Clear Khatabook Item</h3>
+            <button class="close-btn" onclick="closeModal()">✕</button>
+          </div>
+
+          <div style="padding:10px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:12px; margin-bottom:12px; font-size:11px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+              <span>Student:</span><strong>${activeKhataItemToClear.student_name}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+              <span>Item Description:</span><strong>${activeKhataItemToClear.item_name}</strong>
+            </div>
+            <div style="display:flex; justify-content:space-between;">
+              <span>Amount Due:</span><strong style="color:#DC2626; font-size:13px;">₹${activeKhataItemToClear.amount}</strong>
+            </div>
+          </div>
+
+          <form onsubmit="submitClearKhataPayment(event)">
+            <div class="form-group">
+              <label class="form-label">Select Payment Collection Mode</label>
+              <div style="display:flex; gap:16px; margin-top:4px;">
+                <label style="font-size:11px; font-weight:700; cursor:pointer;">
+                  <input type="radio" name="clear_payment_mode" value="Cash" checked /> Cash 💵
+                </label>
+                <label style="font-size:11px; font-weight:700; cursor:pointer;">
+                  <input type="radio" name="clear_payment_mode" value="Online" /> Online 🌐
+                </label>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top:12px;">
+              <button type="submit" class="btn-primary" style="flex:1; padding:10px;">
+                ✅ Clear & Print Receipt
+              </button>
+              <button type="button" class="btn-secondary" style="flex:1; padding:10px;" onclick="closeModal()">
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+  }
+
   // Modal 1: Add Student
-  if (activeModal === 'add-student') {
+  else if (activeModal === 'add-student') {
     const todayDateStr = new Date().toISOString().split('T')[0];
 
     container.innerHTML = `
@@ -1228,7 +1307,7 @@ function renderActiveModal() {
                   <div style="text-align:right; display:flex; align-items:center; gap:6px;">
                     <strong style="font-size:12px; color:${item.status === 'UNPAID' ? '#DC2626' : '#254B33'};">₹${item.amount}</strong>
                     ${item.status === 'UNPAID' ? `
-                      <button class="btn-primary" style="padding:3px 7px; font-size:9px; background:#254B33;" onclick="handleClearKhataItem(${item.id})">💳 Clear</button>
+                      <button class="btn-primary" style="padding:3px 7px; font-size:9px; background:#254B33;" onclick="triggerKhataClearInAppModal(${item.id}, '${item.item_name.replace(/'/g, "\\'")}', ${item.amount}, '${fin.student.name.replace(/'/g, "\\'")}')">💳 Clear</button>
                     ` : `
                       <span class="badge badge-paid" style="font-size:8px;">PAID</span>
                     `}
@@ -1432,6 +1511,17 @@ function renderActiveModal() {
   }
 }
 
+window.executeCustomConfirm = function() {
+  if (customAlertState && typeof customAlertState.onConfirmCallback === 'function') {
+    const cb = customAlertState.onConfirmCallback;
+    customAlertState = null;
+    closeModal();
+    cb();
+  } else {
+    closeModal();
+  }
+};
+
 // Backup & Restore Handlers
 window.triggerDownloadBackupJSON = function() {
   const jsonStr = db.exportBackupJSON();
@@ -1456,11 +1546,10 @@ window.handleImportBackupFile = function(event) {
   reader.onload = function(e) {
     const result = db.importBackupJSON(e.target.result);
     if (result.success) {
-      alert(`✅ Backup Restored Successfully! Restored ${result.studentCount} student records.`);
-      closeModal();
+      showAppAlert('Backup Restored', `✅ Backup Restored Successfully! Restored ${result.studentCount} student records.`);
       renderCurrentTab();
     } else {
-      alert(`❌ Backup Restore Failed: ${result.error}`);
+      showAppAlert('Restore Failed', `❌ Backup Restore Failed: ${result.error}`);
     }
   };
   reader.readAsText(file);
@@ -1495,10 +1584,24 @@ window.handleAddKhataSubmit = function(event) {
   openModal('student-profile', studentId);
 };
 
-window.handleClearKhataItem = function(chargeId) {
-  const mode = confirm('Click OK for Cash 💵 payment, or CANCEL for Online 🌐 payment?') ? 'Cash' : 'Online';
-  const result = db.clearExtraCharge(chargeId, mode);
-  
+window.triggerKhataClearInAppModal = function(chargeId, itemName, amount, studentName) {
+  openModal('clear-khata-modal', {
+    chargeId,
+    item_name: itemName,
+    amount,
+    student_name: studentName
+  });
+};
+
+window.submitClearKhataPayment = function(event) {
+  event.preventDefault();
+  const form = event.target;
+  const paymentMode = form.clear_payment_mode.value;
+
+  if (!activeKhataItemToClear) return;
+
+  const result = db.clearExtraCharge(activeKhataItemToClear.chargeId, paymentMode);
+
   if (result && result.payment) {
     const student = db.getStudentById(result.charge.student_id);
     receiptData = {
@@ -1550,21 +1653,21 @@ window.handleEditStudentSubmit = function(event) {
 window.handleDeleteStudent = function(studentId) {
   const student = db.getStudentById(studentId);
   if (!student) return;
-  
-  const confirmWarning = confirm(
-    `⚠️ WARNING: Are you sure you want to permanently delete student "${student.name}" (${student.class})?\n\nThis action CANNOT be undone and all fee history records for this student will be permanently erased.`
-  );
 
-  if (confirmWarning) {
-    db.deleteStudent(studentId);
-    closeModal();
-    renderCurrentTab();
-  }
+  showAppConfirm(
+    'Delete Student Permanently',
+    `⚠️ Are you sure you want to permanently delete student "${student.name}" (${student.class})?\n\nThis action CANNOT be undone and all fee history records for this student will be erased.`,
+    () => {
+      db.deleteStudent(studentId);
+      closeModal();
+      renderCurrentTab();
+    }
+  );
 };
 
 window.resetDemoData = function() {
-  if (confirm('Reset system data to original sample dataset?')) {
+  showAppConfirm('Reset Demo System Data', 'Reset all system data to original sample dataset?', () => {
     db.resetToDefaults();
     renderCurrentTab();
-  }
+  });
 };
