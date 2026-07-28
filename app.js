@@ -381,10 +381,9 @@ function renderDashboardView(metrics) {
 
     <!-- Carry Forward Formula Highlight -->
     <div class="formula-box">
-      <div class="formula-title">💡 Arrears Carry-Forward Formula</div>
+      <div class="formula-title">💡 Joining Date Cycle Rule</div>
       <div class="formula-text">
-        Monthly Fee ₹300, Paid ₹250 ➔ Balance ₹50.<br/>
-        Next month total payable automatically compounds: <strong>₹300 (New Fee) + ₹50 (Arrears) = ₹350</strong>.
+        Every student's 1-month tuition cycle starts from their exact <strong>Date of Joining</strong>. Next payment is due on the same day next month!
       </div>
     </div>
 
@@ -512,13 +511,13 @@ window.onStudentSearchKeyDown = function(e) {
 
 function renderStatusBadge(status, dueAmount, renewalDateStr) {
   if (status === 'PAID') {
-    return `<span class="badge badge-paid">PAID</span>`;
+    return `<span class="badge badge-paid">✓ PAID</span>`;
   } else if (status === 'OVERDUE') {
-    return `<span class="badge badge-overdue">OVERDUE ₹${dueAmount}</span>`;
+    return `<span class="badge badge-overdue">🔴 OVERDUE ₹${dueAmount}</span>`;
   } else if (status === 'DUE TODAY') {
-    return `<span class="badge badge-due">DUE TODAY ₹${dueAmount}</span>`;
+    return `<span class="badge badge-due">⏰ DUE TODAY ₹${dueAmount}</span>`;
   } else {
-    return `<span class="badge badge-upcoming">ACTIVE (Due ${renewalDateStr || ''})</span>`;
+    return `<span class="badge badge-upcoming">🟡 ACTIVE (Due ${renewalDateStr || ''})</span>`;
   }
 }
 
@@ -558,7 +557,7 @@ function renderCollectFeesView(students) {
               <div style="font-weight:700; font-size:12px;">₹${fin.student.monthly_fee}</div>
             </div>
             <div>
-              <span style="font-size:9px; color:var(--emerald-600);">Next Dues Renewal:</span>
+              <span style="font-size:9px; color:var(--emerald-600);">Next Fee Due Date:</span>
               <div style="font-weight:700; font-size:11px; color:#254B33;">${fin.cycleNextRenewal}</div>
             </div>
             <div style="grid-column: span 2; margin-top:2px;">
@@ -1261,7 +1260,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 6: Student Profile Drawer (Accurate Coaching Cycle Renewal Dates)
+  // Modal 6: Student Profile Drawer (Crystal Clear Coaching Cycle UI)
   else if (activeModal === 'student-profile' && profileStudentId) {
     const fin = db.calculateStudentFinancials(profileStudentId);
     if (!fin) return;
@@ -1290,7 +1289,7 @@ function renderActiveModal() {
             </div>
           </div>
 
-          <!-- Total Dues Card -->
+          <!-- Total Dues Summary Header Card -->
           <div class="formula-box" style="margin-top:4px; margin-bottom:8px; ${isOverdue ? 'background:rgba(254,242,242,0.95); border-left-color:#DC2626;' : ''}">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
@@ -1301,24 +1300,17 @@ function renderActiveModal() {
               </div>
               <div style="font-size:20px; font-weight:800; color:${isOverdue ? '#DC2626' : fin.totalCurrentDue === 0 ? '#254B33' : 'var(--emerald-950)'};">₹${fin.totalCurrentDue}</div>
             </div>
-
-            ${fin.advanceBalance > 0 ? `
-              <div style="margin-top:6px; padding:4px 8px; background:rgba(37,75,51,0.12); border:1px solid rgba(37,75,51,0.3); border-radius:8px; font-size:10px; color:#254B33; font-weight:800; display:flex; justify-content:space-between;">
-                <span>✨ Advance Tuition Credit:</span>
-                <span>₹${fin.advanceBalance}</span>
-              </div>
-            ` : ''}
           </div>
 
-          <!-- Cycle Expiry & Next Renewal Highlight Card -->
-          <div style="padding:8px 10px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:12px; margin-bottom:10px; font-size:10px; display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <!-- Simple, Crystal Clear Coaching Cycle Card -->
+          <div style="padding:10px 12px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:14px; margin-bottom:10px; font-size:11px; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
             <div>
-              <span style="color:var(--emerald-600); font-weight:700;">🗓️ Active Cycle Paid Until:</span>
-              <div style="font-weight:800; color:var(--emerald-950); font-size:11px;">${fin.cyclePaidUntil || 'Unpaid (Active Cycle)'}</div>
+              <span style="color:var(--emerald-600); font-weight:700;">🗓️ Current Monthly Cycle:</span>
+              <div style="font-weight:800; color:var(--emerald-950); font-size:11px; margin-top:2px;">${fin.cyclePeriodStr}</div>
             </div>
             <div>
-              <span style="color:var(--emerald-600); font-weight:700;">⏳ Next Dues Renewal Date:</span>
-              <div style="font-weight:800; color:${isOverdue ? '#DC2626' : '#254B33'}; font-size:11px;">${fin.cycleNextRenewal}</div>
+              <span style="color:var(--emerald-600); font-weight:700;">⏰ Next Fee Due Date:</span>
+              <div style="font-weight:800; color:${isOverdue ? '#DC2626' : '#254B33'}; font-size:11px; margin-top:2px;">${fin.cycleNextRenewal}</div>
             </div>
           </div>
 
@@ -1358,21 +1350,21 @@ function renderActiveModal() {
             </div>
           </div>
 
-          <!-- Section A: Month-by-Month Baseline Audit -->
-          <h4 style="font-size:11px; font-weight:800; color:var(--emerald-800); margin-bottom:6px;">Month-by-Month Tuition Baseline</h4>
-          <div style="max-height:100px; overflow-y:auto; margin-bottom:10px;">
+          <!-- Section A: Month-by-Month Baseline Audit Breakdown -->
+          <h4 style="font-size:11px; font-weight:800; color:var(--emerald-800); margin-bottom:6px;">Month-by-Month Cycle Breakdown</h4>
+          <div style="max-height:110px; overflow-y:auto; margin-bottom:10px;">
             ${fin.billingMonths.map(bm => `
               <div class="month-pending-row">
                 <div>
-                  <strong>${bm.monthName} ${bm.year}</strong>
-                  <div style="font-size:9px; color:var(--emerald-600);">Fee: ₹${bm.baseFee}</div>
+                  <strong>Cycle: ${bm.cycleLabel}</strong>
+                  <div style="font-size:9px; color:var(--emerald-600);">Baseline Fee: ₹${bm.baseFee}</div>
                 </div>
                 <div>
                   ${bm.isPaid ? 
                     `<span class="badge badge-paid">✓ PAID</span>` : 
                     isOverdue ? 
                     `<span class="badge badge-overdue">🔴 PENDING ₹${bm.remainingBalance}</span>` : 
-                    `<span class="badge badge-upcoming" style="font-size:8px;">🟢 ACTIVE CYCLE (Due ${fin.cycleNextRenewal})</span>`
+                    `<span class="badge badge-upcoming" style="font-size:8px;">🟡 ACTIVE MONTH (Due ${fin.cycleNextRenewal})</span>`
                   }
                 </div>
               </div>
