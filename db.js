@@ -162,8 +162,8 @@ const INITIAL_EXTRA_CHARGES = [
     student_id: 1,
     item_name: 'Rough Book',
     amount: 50,
-    date: '2026-05-15',
-    status: 'Paid'
+    added_date: '2026-05-15',
+    status: 'UNPAID'
   }
 ];
 
@@ -239,6 +239,75 @@ class DBService {
     payments = payments.filter(p => p.student_id !== Number(id));
     localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(payments));
 
+    let charges = this.getExtraCharges();
+    charges = charges.filter(c => c.student_id !== Number(id));
+    localStorage.setItem(STORAGE_KEYS.EXTRA_CHARGES, JSON.stringify(charges));
+
+    return true;
+  }
+
+  // --- Khatabook / Extra Charges Ledger ---
+  getExtraCharges() {
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.EXTRA_CHARGES) || '[]');
+  }
+
+  getExtraChargesByStudent(studentId) {
+    const charges = this.getExtraCharges();
+    return charges.filter(c => c.student_id === Number(studentId));
+  }
+
+  addExtraCharge({ student_id, item_name, amount, added_date }) {
+    const charges = this.getExtraCharges();
+    const newCharge = {
+      id: Date.now(),
+      student_id: Number(student_id),
+      item_name: item_name.trim(),
+      amount: Number(amount),
+      added_date: added_date || new Date().toISOString().split('T')[0],
+      status: 'UNPAID',
+      created_at: new Date().toISOString()
+    };
+    charges.push(newCharge);
+    localStorage.setItem(STORAGE_KEYS.EXTRA_CHARGES, JSON.stringify(charges));
+    return newCharge;
+  }
+
+  clearExtraCharge(chargeId, paymentMode = 'Cash') {
+    const charges = this.getExtraCharges();
+    const index = charges.findIndex(c => c.id === Number(chargeId));
+    if (index !== -1) {
+      const charge = charges[index];
+      charge.status = 'PAID';
+      charge.paid_date = new Date().toISOString();
+      charge.payment_mode = paymentMode;
+      localStorage.setItem(STORAGE_KEYS.EXTRA_CHARGES, JSON.stringify(charges));
+
+      // Record a payment transaction so digital receipt is generated!
+      const student = this.getStudentById(charge.student_id);
+      const now = new Date();
+
+      const payment = this.recordPayment({
+        student_id: charge.student_id,
+        month: MONTH_NAMES[now.getMonth()],
+        year: now.getFullYear(),
+        monthly_fee: student ? student.monthly_fee : 0,
+        paid_amount: 0,
+        remaining_amount: 0,
+        extra_item_name: charge.item_name,
+        extra_charge_amount: charge.amount,
+        payment_mode: paymentMode,
+        payment_date: new Date().toISOString()
+      });
+
+      return { charge, payment };
+    }
+    return null;
+  }
+
+  deleteExtraCharge(chargeId) {
+    let charges = this.getExtraCharges();
+    charges = charges.filter(c => c.id !== Number(chargeId));
+    localStorage.setItem(STORAGE_KEYS.EXTRA_CHARGES, JSON.stringify(charges));
     return true;
   }
 
@@ -304,12 +373,17 @@ class DBService {
     return newPayment;
   }
 
-  // --- Financial Engine with Multi-Month Cycle Expiry & Renewal Dates ---
+  // --- Financial Engine with Multi-Month Cycle Expiry & Isolated Khatabook Ledger ---
   calculateStudentFinancials(studentId, referenceDate = new Date()) {
     const student = this.getStudentById(studentId);
     if (!student) return null;
 
     const payments = this.getPaymentsByStudent(studentId);
+    const extraCharges = this.getExtraChargesByStudent(studentId);
+
+    const unpaidKhataItems = extraCharges.filter(c => c.status === 'UNPAID');
+    const unpaidKhataTotal = unpaidKhataItems.reduce((sum, c) => sum + Number(c.amount || 0), 0);
+
     const joiningDate = new Date(student.joining_date);
     const refYear = referenceDate.getFullYear();
     const refMonthIdx = referenceDate.getMonth();
@@ -348,7 +422,6 @@ class DBService {
     const advanceBalance = Math.max(0, totalPaidPool - totalAccumulatedFee);
     const totalCurrentDue = Math.max(0, totalAccumulatedFee - totalPaidPool);
 
-    // Multi-Month Cycle Paid Until & Renewal Calculation
     const fullMonthsPaidCount = Math.floor(totalPaidPool / student.monthly_fee);
     const cycleInfo = this.calculateCyclePaidUntilDate(student.joining_date, fullMonthsPaidCount);
 
@@ -427,7 +500,10 @@ class DBService {
       currentMonthPaid: currentMonthDetail ? currentMonthDetail.paidAmount : 0,
       currentMonthRemaining: totalCurrentDue,
       totalCurrentDue,
-      dueStatus
+      dueStatus,
+      unpaidKhataItems,
+      unpaidKhataTotal,
+      extraCharges
     };
   }
 
@@ -442,12 +518,11 @@ class DBService {
     }
     const day = j.getDate();
 
-    // Clamp day to max days in month
     const maxDays = new Date(y, m + 1, 0).getDate();
     const renewalDay = Math.min(day, maxDays);
 
     const renewalDate = new Date(y, m, renewalDay);
-    const paidUntilDate = new Date(renewalDate.getTime() - 86400000); // 1 day before renewal
+    const paidUntilDate = new Date(renewalDate.getTime() - 86400000);
 
     return {
       paidUntilStr: this.formatDisplayDate(paidUntilDate.toISOString()),

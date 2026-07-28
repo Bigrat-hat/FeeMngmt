@@ -9,7 +9,7 @@ let profileStudentId = null;
 let editStudentId = null;
 let selectedCalendarDay = null;
 let selectedBoardForList = null;
-let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'board-list', 'calendar-day', 'receipt'
+let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'board-list', 'calendar-day', 'receipt', 'add-khata'
 let receiptData = null;
 
 // Interactive Calendar Month & Year Navigation State (Defaults to current live month & year!)
@@ -426,6 +426,7 @@ function renderStudentCardListHTML(students) {
         </div>
         <div style="text-align:right;">
           ${renderStatusBadge(fin.dueStatus, fin.totalCurrentDue)}
+          ${fin.unpaidKhataTotal > 0 ? `<div style="font-size:9px; color:#DC2626; font-weight:800; margin-top:2px;">🔴 Khata: ₹${fin.unpaidKhataTotal}</div>` : ''}
         </div>
       </div>
     `;
@@ -458,7 +459,7 @@ function renderStatusBadge(status, dueAmount) {
   }
 }
 
-// --- 3. Collect Fees View + Stationery Extra Charges Preset Chips ---
+// --- 3. Collect Fees View + Preset Chips ---
 function renderCollectFeesView(students) {
   const activeStudents = students.filter(s => s.status === 'Active' || (s.status === 'Left' && db.calculateStudentFinancials(s.id).totalCurrentDue > 0));
   const selectedStudent = selectedStudentForCollect ? db.getStudentById(selectedStudentForCollect) : activeStudents[0];
@@ -615,7 +616,6 @@ window.handleFeeCollection = function(event) {
 
   const totalCollection = paidAmount + extraChargeAmount;
 
-  // STRICT RULE 1: Do NOT generate a receipt if total collection amount is 0!
   if (totalCollection <= 0) {
     alert('⚠️ Cannot generate receipt for ₹0 collection. Please enter a valid payment amount or extra charges.');
     return;
@@ -897,7 +897,63 @@ function renderActiveModal() {
     `;
   } 
 
-  // Modal 2: Edit Student Modal
+  // Modal 2: Add Khata / Udhaar Extra Charge Item Modal
+  else if (activeModal === 'add-khata' && profileStudentId) {
+    const student = db.getStudentById(profileStudentId);
+    if (!student) return;
+    const todayDateStr = new Date().toISOString().split('T')[0];
+
+    container.innerHTML = `
+      <div class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+          <div class="modal-header">
+            <h3 class="modal-title">Add Extra Charge (Khatabook Udhaar)</h3>
+            <button class="close-btn" onclick="closeModal()">✕</button>
+          </div>
+          
+          <div style="font-size:11px; color:var(--emerald-600); margin-bottom:10px;">
+            Adding stationery/extra item for <strong>${student.name}</strong> (${student.class}). This adds to their red unpaid Khata ledger.
+          </div>
+
+          <form onsubmit="handleAddKhataSubmit(event)">
+            <input type="hidden" name="student_id" value="${student.id}" />
+
+            <!-- Quick Presets -->
+            <div class="form-group">
+              <label class="form-label">Quick Presets</label>
+              <div style="display:flex; flex-wrap:wrap; gap:4px;">
+                <button type="button" class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="applyKhataModalPreset('Rough Book', 50)">📘 Rough Book (₹50)</button>
+                <button type="button" class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="applyKhataModalPreset('Copy', 40)">📓 Copy (₹40)</button>
+                <button type="button" class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="applyKhataModalPreset('Pen', 10)">🖊️ Pen (₹10)</button>
+                <button type="button" class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="applyKhataModalPreset('Pouch', 60)">🎒 Pouch (₹60)</button>
+                <button type="button" class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="applyKhataModalPreset('Notes', 100)">📚 Notes (₹100)</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Item Description *</label>
+              <input type="text" id="khata_modal_item_name" name="item_name" class="form-control" required placeholder="e.g. Rough Book / Class Copy" />
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div class="form-group">
+                <label class="form-label">Amount (₹) *</label>
+                <input type="number" id="khata_modal_amount" name="amount" class="form-control" required min="1" placeholder="50" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Date *</label>
+                <input type="date" name="added_date" class="form-control" required value="${todayDateStr}" />
+              </div>
+            </div>
+
+            <button type="submit" class="btn-primary" style="width:100%; padding:10px; margin-top:8px;">➕ Add to Red Khata Ledger</button>
+          </form>
+        </div>
+      </div>
+    `;
+  }
+
+  // Modal 3: Edit Student Modal
   else if (activeModal === 'edit-student' && editStudentId) {
     const student = db.getStudentById(editStudentId);
     if (!student) return;
@@ -981,7 +1037,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 3: Board Student List Drawer
+  // Modal 4: Board Student List Drawer
   else if (activeModal === 'board-list' && selectedBoardForList) {
     const boardStudents = db.getStudentsByBoard(selectedBoardForList);
     const displayBoardTitle = selectedBoardForList === 'State Board' ? 'State / MP Board' : selectedBoardForList;
@@ -1029,7 +1085,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 4: Student Profile Drawer (Cycle Expiry & Renewal Dates + Receipt History)
+  // Modal 5: Student Profile Drawer (Khatabook Udhaar Red Ledger Integrated!)
   else if (activeModal === 'student-profile' && profileStudentId) {
     const fin = db.calculateStudentFinancials(profileStudentId);
     if (!fin) return;
@@ -1062,7 +1118,7 @@ function renderActiveModal() {
               <div>
                 <span style="font-size:10px; color:var(--emerald-600);">Monthly Fee: ₹${fin.student.monthly_fee} • Joined: ${fin.student.joining_date}</span>
                 <div style="font-size:15px; font-weight:800; color:${isLeft && fin.totalCurrentDue > 0 ? '#DC2626' : 'var(--emerald-950)'};">
-                  ${isLeft ? 'Outstanding Left Dues (Saved)' : 'Total Outstanding Dues'}
+                  ${isLeft ? 'Outstanding Left Tuition Dues' : 'Total Tuition Fee Dues'}
                 </div>
               </div>
               <div style="font-size:20px; font-weight:800; color:${fin.totalCurrentDue === 0 ? '#254B33' : 'var(--status-overdue-text)'};">₹${fin.totalCurrentDue}</div>
@@ -1070,7 +1126,7 @@ function renderActiveModal() {
 
             ${fin.advanceBalance > 0 ? `
               <div style="margin-top:6px; padding:4px 8px; background:rgba(37,75,51,0.12); border:1px solid rgba(37,75,51,0.3); border-radius:8px; font-size:10px; color:#254B33; font-weight:800; display:flex; justify-content:space-between;">
-                <span>✨ Advance Credit Balance:</span>
+                <span>✨ Advance Tuition Credit:</span>
                 <span>₹${fin.advanceBalance}</span>
               </div>
             ` : ''}
@@ -1088,9 +1144,45 @@ function renderActiveModal() {
             </div>
           </div>
 
+          <!-- KHATABOOK EXTRA CHARGES LEDGER SECTION (RED FOR UNPAID) -->
+          <div style="padding:10px; background:rgba(254, 242, 242, 0.9); border:1.5px solid rgba(220, 38, 38, 0.4); border-radius:14px; margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <div>
+                <strong style="font-size:11px; color:#DC2626;">🛍️ Khatabook Extra Charges (Udhaar)</strong>
+                <div style="font-size:9px; color:#DC2626; font-weight:700;">
+                  ${fin.unpaidKhataTotal > 0 ? `Unpaid Total: ₹${fin.unpaidKhataTotal}` : 'No Pending Khata Dues'}
+                </div>
+              </div>
+              <button class="btn-primary" style="padding:4px 8px; font-size:10px; background:#DC2626; border-color:#DC2626;" onclick="openModal('add-khata')">
+                ➕ Add Item
+              </button>
+            </div>
+
+            <div style="max-height:110px; overflow-y:auto;">
+              ${fin.extraCharges.length > 0 ? fin.extraCharges.map(item => `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; background:#FFFFFF; border:1px solid ${item.status === 'UNPAID' ? 'rgba(220,38,38,0.4)' : 'var(--card-border)'}; border-radius:10px; margin-bottom:4px; font-size:10px;">
+                  <div>
+                    <strong style="color:${item.status === 'UNPAID' ? '#DC2626' : 'var(--emerald-950)'};">${item.item_name}</strong>
+                    <div style="font-size:8px; color:var(--emerald-600);">${db.formatDisplayDate(item.added_date)} ${item.status === 'UNPAID' ? '• 🔴 UNPAID' : '• ✓ PAID (' + item.payment_mode + ')'}</div>
+                  </div>
+                  <div style="text-align:right; display:flex; align-items:center; gap:6px;">
+                    <strong style="font-size:12px; color:${item.status === 'UNPAID' ? '#DC2626' : '#254B33'};">₹${item.amount}</strong>
+                    ${item.status === 'UNPAID' ? `
+                      <button class="btn-primary" style="padding:3px 7px; font-size:9px; background:#254B33;" onclick="handleClearKhataItem(${item.id})">💳 Clear</button>
+                    ` : `
+                      <span class="badge badge-paid" style="font-size:8px;">PAID</span>
+                    `}
+                  </div>
+                </div>
+              `).join('') : `
+                <div style="text-align:center; padding:8px; color:var(--emerald-600); font-size:10px;">No extra charges added yet.</div>
+              `}
+            </div>
+          </div>
+
           <!-- Section A: Month-by-Month Baseline Audit -->
-          <h4 style="font-size:11px; font-weight:800; color:var(--emerald-800); margin-bottom:6px;">Month-by-Month Baseline Status</h4>
-          <div style="max-height:110px; overflow-y:auto; margin-bottom:10px;">
+          <h4 style="font-size:11px; font-weight:800; color:var(--emerald-800); margin-bottom:6px;">Month-by-Month Tuition Baseline</h4>
+          <div style="max-height:100px; overflow-y:auto; margin-bottom:10px;">
             ${fin.billingMonths.map(bm => `
               <div class="month-pending-row">
                 <div>
@@ -1109,7 +1201,7 @@ function renderActiveModal() {
 
           <!-- Section B: Payment Transaction & Digital Receipt History -->
           <h4 style="font-size:11px; font-weight:800; color:var(--emerald-800); margin-bottom:6px;">Payment Receipts & Transaction Log 🧾</h4>
-          <div style="max-height:120px; overflow-y:auto; margin-bottom:12px;">
+          <div style="max-height:110px; overflow-y:auto; margin-bottom:12px;">
             ${studentPayments.length > 0 ? studentPayments.map(p => `
               <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:10px; margin-bottom:4px; font-size:10px;">
                 <div>
@@ -1139,7 +1231,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 5: Calendar Day Details Bottom Sheet
+  // Modal 6: Calendar Day Details Bottom Sheet
   else if (activeModal === 'calendar-day' && selectedCalendarDay) {
     const students = db.getStudents();
     const dueStudents = students.filter(s => s.status === 'Active' && new Date(s.joining_date).getDate() === selectedCalendarDay);
@@ -1188,7 +1280,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 6: Dashboard Pending Dues List
+  // Modal 7: Dashboard Pending Dues List
   else if (activeModal === 'pending-list') {
     const metrics = db.getDashboardMetrics();
     container.innerHTML = `
@@ -1231,7 +1323,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 7: Digital Receipt Sheet
+  // Modal 8: Digital Receipt Sheet
   else if (activeModal === 'receipt' && receiptData) {
     const totalCollected = receiptData.payment.paid_amount + (receiptData.payment.extra_charge_amount || 0);
 
@@ -1279,6 +1371,53 @@ function renderActiveModal() {
     `;
   }
 }
+
+// Khata Modal Preset Helper
+window.applyKhataModalPreset = function(itemName, price) {
+  const nameInput = document.getElementById('khata_modal_item_name');
+  const priceInput = document.getElementById('khata_modal_amount');
+  if (nameInput && priceInput) {
+    nameInput.value = itemName;
+    priceInput.value = price;
+  }
+};
+
+window.handleAddKhataSubmit = function(event) {
+  event.preventDefault();
+  const form = event.target;
+  const studentId = form.student_id.value;
+  const itemName = form.item_name.value;
+  const amount = form.amount.value;
+  const addedDate = form.added_date.value;
+
+  db.addExtraCharge({
+    student_id: studentId,
+    item_name: itemName,
+    amount: amount,
+    added_date: addedDate
+  });
+
+  closeModal();
+  openModal('student-profile', studentId);
+};
+
+window.handleClearKhataItem = function(chargeId) {
+  const mode = confirm('Click OK for Cash 💵 payment, or CANCEL for Online 🌐 payment?') ? 'Cash' : 'Online';
+  const result = db.clearExtraCharge(chargeId, mode);
+  
+  if (result && result.payment) {
+    const student = db.getStudentById(result.charge.student_id);
+    receiptData = {
+      payment: result.payment,
+      student: student || { name: 'Student', class: '' },
+      totalPayable: result.charge.amount,
+      remainingArrears: 0
+    };
+    openModal('receipt');
+  } else {
+    renderCurrentTab();
+  }
+};
 
 window.handleAddStudentSubmit = function(event) {
   event.preventDefault();
