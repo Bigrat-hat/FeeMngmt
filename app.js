@@ -9,7 +9,7 @@ let profileStudentId = null;
 let editStudentId = null;
 let selectedCalendarDay = null;
 let selectedBoardForList = null;
-let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'board-list', 'calendar-day', 'receipt', 'add-khata'
+let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'board-list', 'calendar-day', 'receipt', 'add-khata', 'backup-restore'
 let receiptData = null;
 
 // Interactive Calendar Month & Year Navigation State (Defaults to current live month & year!)
@@ -42,7 +42,7 @@ function initMidnightRealtimeClock() {
 // PWA Back Button Lock
 function initHistoryLock() {
   history.pushState(null, '', location.href);
-  window.onpopstate = function () {
+  window.onpopstate = function() {
     history.pushState(null, '', location.href);
     if (activeModal) {
       closeModal();
@@ -68,7 +68,7 @@ function initPWA() {
 }
 
 // Global Tab Switcher
-window.switchTab = function (tabName) {
+window.switchTab = function(tabName) {
   if (currentTab === tabName) return;
   currentTab = tabName;
   updateNavActiveState();
@@ -155,6 +155,12 @@ function renderAdminLoginView() {
             Log In ➔
           </button>
         </form>
+
+        <div style="margin-top:14px; border-top:1px dashed var(--card-border); padding-top:10px; text-align:center;">
+          <button class="btn-secondary" style="font-size:10px; padding:4px 10px;" onclick="openModal('backup-restore')">
+            💾 Backup & Restore Portal Data
+          </button>
+        </div>
       </div>
 
       <div style="text-align:center; margin-top:20px; font-size:10px; color:var(--emerald-600);">
@@ -165,7 +171,7 @@ function renderAdminLoginView() {
   `;
 }
 
-window.handleAdminLoginSubmit = function (e) {
+window.handleAdminLoginSubmit = function(e) {
   e.preventDefault();
   const p = document.getElementById('loginPassword').value;
 
@@ -179,7 +185,7 @@ window.handleAdminLoginSubmit = function (e) {
   }
 };
 
-window.handleAdminLogout = function () {
+window.handleAdminLogout = function() {
   if (confirm('Log out from Anshu Coaching Admin Portal?')) {
     isLoggedIn = false;
     localStorage.removeItem('anshu_admin_logged_in');
@@ -189,7 +195,7 @@ window.handleAdminLogout = function () {
 };
 
 // Modal Trigger Helpers
-window.openModal = function (modalName, payload = null) {
+window.openModal = function(modalName, payload = null) {
   activeModal = modalName;
   if (modalName === 'collect-fee' && payload) {
     selectedStudentForCollect = payload;
@@ -225,7 +231,7 @@ window.openModal = function (modalName, payload = null) {
   renderActiveModal();
 };
 
-window.closeModal = function () {
+window.closeModal = function() {
   activeModal = null;
   selectedStudentForCollect = null;
   profileStudentId = null;
@@ -311,6 +317,17 @@ function renderDashboardView(metrics) {
           <div style="font-size:9px; color:var(--emerald-600); margin-top:2px; font-weight:700;">Tap to view ➔</div>
         </div>
       </div>
+    </div>
+
+    <!-- Backup & Safety Quick Card -->
+    <div class="glass-card" style="padding:12px; display:flex; justify-content:space-between; align-items:center; border:1px solid rgba(37,75,51,0.2);">
+      <div>
+        <strong style="font-size:12px; color:var(--emerald-950);">💾 Data Safety & Backup Center</strong>
+        <div style="font-size:9px; color:var(--emerald-600);">Export 1-Tap Backup file to WhatsApp / Drive</div>
+      </div>
+      <button class="btn-secondary" style="padding:6px 10px; font-size:10px;" onclick="openModal('backup-restore')">
+        Backup / Restore ➔
+      </button>
     </div>
 
     <!-- Quick Action Button -->
@@ -433,7 +450,7 @@ function renderStudentCardListHTML(students) {
   }).join('');
 }
 
-window.onStudentSearchInput = function (e) {
+window.onStudentSearchInput = function(e) {
   searchQuery = e.target.value;
   const container = document.getElementById('students-list-container');
   if (container) {
@@ -441,7 +458,7 @@ window.onStudentSearchInput = function (e) {
   }
 };
 
-window.onStudentSearchKeyDown = function (e) {
+window.onStudentSearchKeyDown = function(e) {
   if (e.key === 'Enter') {
     e.target.blur();
   }
@@ -589,7 +606,7 @@ function renderCollectFeesView(students) {
   `;
 }
 
-window.applyStationeryPreset = function (itemName, price) {
+window.applyStationeryPreset = function(itemName, price) {
   const nameInput = document.getElementById('extra_item_name');
   const priceInput = document.getElementById('extra_charge_amount');
   if (nameInput && priceInput) {
@@ -598,12 +615,12 @@ window.applyStationeryPreset = function (itemName, price) {
   }
 };
 
-window.onStudentSelectForCollect = function (studentId) {
+window.onStudentSelectForCollect = function(studentId) {
   selectedStudentForCollect = studentId;
   renderCurrentTab();
 };
 
-window.handleFeeCollection = function (event) {
+window.handleFeeCollection = function(event) {
   event.preventDefault();
   const form = event.target;
   const studentId = form.student_id.value;
@@ -666,7 +683,7 @@ function renderCalendarView(students) {
   const isCurrentLiveMonth = (calendarViewYear === new Date().getFullYear() && calendarViewMonthIdx === new Date().getMonth());
 
   const selectedDay = selectedCalendarDay || (isCurrentLiveMonth ? new Date().getDate() : 1);
-
+  
   const joiningStudents = students.filter(s => {
     const d = new Date(s.joining_date);
     return d.getDate() === selectedDay;
@@ -754,7 +771,7 @@ function renderCalendarView(students) {
   `;
 }
 
-window.navigateCalendarMonth = function (delta) {
+window.navigateCalendarMonth = function(delta) {
   calendarViewMonthIdx += delta;
   if (calendarViewMonthIdx > 11) {
     calendarViewMonthIdx = 0;
@@ -766,7 +783,7 @@ window.navigateCalendarMonth = function (delta) {
   renderCurrentTab();
 };
 
-window.resetCalendarToToday = function () {
+window.resetCalendarToToday = function() {
   const now = new Date();
   calendarViewYear = now.getFullYear();
   calendarViewMonthIdx = now.getMonth();
@@ -806,7 +823,7 @@ function renderCalendarGridDays(students) {
   return gridHTML;
 }
 
-window.onCalendarDaySelect = function (day) {
+window.onCalendarDaySelect = function(day) {
   selectedCalendarDay = day;
   renderCurrentTab();
 };
@@ -849,7 +866,7 @@ function renderActiveModal() {
               <div class="form-group">
                 <label class="form-label">Class (1st to 10th) *</label>
                 <select name="class" class="form-control" required>
-                  ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(c => `<option value="Class ${c}" ${c === 10 ? 'selected' : ''}>Class ${c}</option>`).join('')}
+                  ${[1,2,3,4,5,6,7,8,9,10].map(c => `<option value="Class ${c}" ${c===10?'selected':''}>Class ${c}</option>`).join('')}
                 </select>
               </div>
             </div>
@@ -895,7 +912,7 @@ function renderActiveModal() {
         </div>
       </div>
     `;
-  }
+  } 
 
   // Modal 2: Add Khata / Udhaar Extra Charge Item Modal
   else if (activeModal === 'add-khata' && profileStudentId) {
@@ -953,7 +970,50 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 3: Edit Student Modal
+  // Modal 3: Backup & Restore Data Modal
+  else if (activeModal === 'backup-restore') {
+    container.innerHTML = `
+      <div class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+          <div class="modal-header">
+            <h3 class="modal-title">💾 Backup & Restore Data</h3>
+            <button class="close-btn" onclick="closeModal()">✕</button>
+          </div>
+
+          <div style="font-size:11px; color:var(--emerald-600); margin-bottom:12px;">
+            Keep your coaching data 100% safe! Download a 1-tap backup file anytime and save it in your Google Drive or WhatsApp.
+          </div>
+
+          <!-- Section 1: Export Download -->
+          <div style="padding:12px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:14px; margin-bottom:12px;">
+            <strong style="font-size:12px; color:var(--emerald-950);">📥 Step 1: Export Complete Backup</strong>
+            <p style="font-size:10px; color:var(--emerald-600); margin-top:2px; margin-bottom:8px;">
+              Downloads a <code>.json</code> file with all students, payments, receipts, and Khatabook records.
+            </p>
+            <button class="btn-primary" style="width:100%; padding:10px;" onclick="triggerDownloadBackupJSON()">
+              📥 Download Backup File (.json)
+            </button>
+          </div>
+
+          <!-- Section 2: Import Restore -->
+          <div style="padding:12px; background:rgba(37,75,51,0.06); border:1px solid var(--card-border); border-radius:14px; margin-bottom:10px;">
+            <strong style="font-size:12px; color:var(--emerald-950);">📤 Step 2: Restore Backup on New Device</strong>
+            <p style="font-size:10px; color:var(--emerald-600); margin-top:2px; margin-bottom:8px;">
+              Got a new phone or lost device? Upload your saved <code>.json</code> backup file to restore all records instantly!
+            </p>
+            <input type="file" id="backupFileInput" accept=".json" style="display:none;" onchange="handleImportBackupFile(event)" />
+            <button class="btn-secondary" style="width:100%; padding:10px;" onclick="document.getElementById('backupFileInput').click()">
+              📤 Upload & Restore Backup File
+            </button>
+          </div>
+
+          <button class="btn-secondary" style="width:100%; padding:8px;" onclick="closeModal()">Close</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // Modal 4: Edit Student Modal
   else if (activeModal === 'edit-student' && editStudentId) {
     const student = db.getStudentById(editStudentId);
     if (!student) return;
@@ -984,7 +1044,7 @@ function renderActiveModal() {
               <div class="form-group">
                 <label class="form-label">Class *</label>
                 <select name="class" class="form-control" required>
-                  ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(c => `
+                  ${[1,2,3,4,5,6,7,8,9,10].map(c => `
                     <option value="Class ${c}" ${student.class === 'Class ' + c ? 'selected' : ''}>Class ${c}</option>
                   `).join('')}
                 </select>
@@ -1037,7 +1097,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 4: Board Student List Drawer
+  // Modal 5: Board Student List Drawer
   else if (activeModal === 'board-list' && selectedBoardForList) {
     const boardStudents = db.getStudentsByBoard(selectedBoardForList);
     const displayBoardTitle = selectedBoardForList === 'State Board' ? 'State / MP Board' : selectedBoardForList;
@@ -1057,8 +1117,8 @@ function renderActiveModal() {
 
           <div style="max-height:260px; overflow-y:auto; margin-bottom:14px;">
             ${boardStudents.length > 0 ? boardStudents.map(s => {
-      const fin = db.calculateStudentFinancials(s.id);
-      return `
+              const fin = db.calculateStudentFinancials(s.id);
+              return `
                 <div class="student-card-item" onclick="closeModal(); openModal('student-profile', ${s.id});" style="margin-bottom:8px;">
                   <div style="display:flex; align-items:center; gap:8px;">
                     <span class="student-avatar">${s.gender === 'Female' ? '👧' : '👦'}</span>
@@ -1072,7 +1132,7 @@ function renderActiveModal() {
                   </div>
                 </div>
               `;
-    }).join('') : `
+            }).join('') : `
               <div style="text-align:center; padding:30px 10px; color:var(--emerald-600); font-size:12px;">
                 No active students enrolled under ${displayBoardTitle}.
               </div>
@@ -1085,7 +1145,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 5: Student Profile Drawer (Khatabook Udhaar Red Ledger Integrated!)
+  // Modal 6: Student Profile Drawer (Khatabook Udhaar Red Ledger Integrated!)
   else if (activeModal === 'student-profile' && profileStudentId) {
     const fin = db.calculateStudentFinancials(profileStudentId);
     if (!fin) return;
@@ -1190,10 +1250,10 @@ function renderActiveModal() {
                   <div style="font-size:9px; color:var(--emerald-600);">Fee: ₹${bm.baseFee}</div>
                 </div>
                 <div>
-                  ${bm.isPaid ?
-        `<span class="badge badge-paid">✓ PAID</span>` :
-        `<span class="badge badge-overdue">🔴 PENDING ₹${bm.remainingBalance}</span>`
-      }
+                  ${bm.isPaid ? 
+                    `<span class="badge badge-paid">✓ PAID</span>` : 
+                    `<span class="badge badge-overdue">🔴 PENDING ₹${bm.remainingBalance}</span>`
+                  }
                 </div>
               </div>
             `).join('')}
@@ -1231,7 +1291,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 6: Calendar Day Details Bottom Sheet
+  // Modal 7: Calendar Day Details Bottom Sheet
   else if (activeModal === 'calendar-day' && selectedCalendarDay) {
     const students = db.getStudents();
     const dueStudents = students.filter(s => s.status === 'Active' && new Date(s.joining_date).getDate() === selectedCalendarDay);
@@ -1252,8 +1312,8 @@ function renderActiveModal() {
 
           <div style="max-height:240px; overflow-y:auto; margin-bottom:14px;">
             ${dueStudents.length > 0 ? dueStudents.map(s => {
-      const fin = db.calculateStudentFinancials(s.id);
-      return `
+              const fin = db.calculateStudentFinancials(s.id);
+              return `
                 <div class="student-card-item" onclick="closeModal(); openModal('student-profile', ${s.id});" style="margin-bottom:8px;">
                   <div style="display:flex; align-items:center; gap:8px;">
                     <span class="student-avatar">${s.gender === 'Female' ? '👧' : '👦'}</span>
@@ -1267,7 +1327,7 @@ function renderActiveModal() {
                   </div>
                 </div>
               `;
-    }).join('') : `
+            }).join('') : `
               <div style="text-align:center; padding:30px 10px; color:var(--emerald-600); font-size:12px;">
                 No recurring student dues scheduled on ${currentMonthName} ${selectedCalendarDay}.
               </div>
@@ -1280,7 +1340,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 7: Dashboard Pending Dues List
+  // Modal 8: Dashboard Pending Dues List
   else if (activeModal === 'pending-list') {
     const metrics = db.getDashboardMetrics();
     container.innerHTML = `
@@ -1323,7 +1383,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 8: Digital Receipt Sheet
+  // Modal 9: Digital Receipt Sheet
   else if (activeModal === 'receipt' && receiptData) {
     const totalCollected = receiptData.payment.paid_amount + (receiptData.payment.extra_charge_amount || 0);
 
@@ -1372,8 +1432,42 @@ function renderActiveModal() {
   }
 }
 
+// Backup & Restore Handlers
+window.triggerDownloadBackupJSON = function() {
+  const jsonStr = db.exportBackupJSON();
+  const blob = new Blob([jsonStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const dateStr = new Date().toISOString().split('T')[0];
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Anshu_Coaching_Backup_${dateStr}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+window.handleImportBackupFile = function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const result = db.importBackupJSON(e.target.result);
+    if (result.success) {
+      alert(`✅ Backup Restored Successfully! Restored ${result.studentCount} student records.`);
+      closeModal();
+      renderCurrentTab();
+    } else {
+      alert(`❌ Backup Restore Failed: ${result.error}`);
+    }
+  };
+  reader.readAsText(file);
+};
+
 // Khata Modal Preset Helper
-window.applyKhataModalPreset = function (itemName, price) {
+window.applyKhataModalPreset = function(itemName, price) {
   const nameInput = document.getElementById('khata_modal_item_name');
   const priceInput = document.getElementById('khata_modal_amount');
   if (nameInput && priceInput) {
@@ -1382,7 +1476,7 @@ window.applyKhataModalPreset = function (itemName, price) {
   }
 };
 
-window.handleAddKhataSubmit = function (event) {
+window.handleAddKhataSubmit = function(event) {
   event.preventDefault();
   const form = event.target;
   const studentId = form.student_id.value;
@@ -1401,10 +1495,10 @@ window.handleAddKhataSubmit = function (event) {
   openModal('student-profile', studentId);
 };
 
-window.handleClearKhataItem = function (chargeId) {
+window.handleClearKhataItem = function(chargeId) {
   const mode = confirm('Click OK for Cash 💵 payment, or CANCEL for Online 🌐 payment?') ? 'Cash' : 'Online';
   const result = db.clearExtraCharge(chargeId, mode);
-
+  
   if (result && result.payment) {
     const student = db.getStudentById(result.charge.student_id);
     receiptData = {
@@ -1419,7 +1513,7 @@ window.handleClearKhataItem = function (chargeId) {
   }
 };
 
-window.handleAddStudentSubmit = function (event) {
+window.handleAddStudentSubmit = function(event) {
   event.preventDefault();
   const form = event.target;
   db.addStudent({
@@ -1436,7 +1530,7 @@ window.handleAddStudentSubmit = function (event) {
   renderCurrentTab();
 };
 
-window.handleEditStudentSubmit = function (event) {
+window.handleEditStudentSubmit = function(event) {
   event.preventDefault();
   const form = event.target;
   db.updateStudent(form.id.value, {
@@ -1453,10 +1547,10 @@ window.handleEditStudentSubmit = function (event) {
   renderCurrentTab();
 };
 
-window.handleDeleteStudent = function (studentId) {
+window.handleDeleteStudent = function(studentId) {
   const student = db.getStudentById(studentId);
   if (!student) return;
-
+  
   const confirmWarning = confirm(
     `⚠️ WARNING: Are you sure you want to permanently delete student "${student.name}" (${student.class})?\n\nThis action CANNOT be undone and all fee history records for this student will be permanently erased.`
   );
@@ -1468,7 +1562,7 @@ window.handleDeleteStudent = function (studentId) {
   }
 };
 
-window.resetDemoData = function () {
+window.resetDemoData = function() {
   if (confirm('Reset system data to original sample dataset?')) {
     db.resetToDefaults();
     renderCurrentTab();

@@ -189,6 +189,34 @@ class DBService {
     localStorage.setItem(STORAGE_KEYS.EXTRA_CHARGES, JSON.stringify(INITIAL_EXTRA_CHARGES));
   }
 
+  // --- Export & Import Backup System ---
+  exportBackupJSON() {
+    const backupData = {
+      app_name: 'Anshu Coaching Classes Fee Portal',
+      version: '1.0.0',
+      export_timestamp: new Date().toISOString(),
+      students: this.getStudents(),
+      payments: this.getPayments(),
+      extra_charges: this.getExtraCharges()
+    };
+    return JSON.stringify(backupData, null, 2);
+  }
+
+  importBackupJSON(jsonString) {
+    try {
+      const parsed = JSON.parse(jsonString);
+      if (!parsed || !Array.isArray(parsed.students)) {
+        throw new Error('Invalid backup file structure.');
+      }
+      localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(parsed.students || []));
+      localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(parsed.payments || []));
+      localStorage.setItem(STORAGE_KEYS.EXTRA_CHARGES, JSON.stringify(parsed.extra_charges || []));
+      return { success: true, studentCount: (parsed.students || []).length };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+
   // --- Students CRUD ---
   getStudents() {
     return JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
@@ -282,7 +310,6 @@ class DBService {
       charge.payment_mode = paymentMode;
       localStorage.setItem(STORAGE_KEYS.EXTRA_CHARGES, JSON.stringify(charges));
 
-      // Record a payment transaction so digital receipt is generated!
       const student = this.getStudentById(charge.student_id);
       const now = new Date();
 
@@ -348,7 +375,6 @@ class DBService {
     const paidAmt = Number(paymentData.paid_amount || 0);
     const extraItemAmt = Number(paymentData.extra_charge_amount || 0);
 
-    // Rule 1: DO NOT create a receipt if total paid amount is 0 and no extra items!
     if (paidAmt <= 0 && extraItemAmt <= 0) {
       return null;
     }
