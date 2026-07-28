@@ -9,7 +9,7 @@ const STORAGE_KEYS = {
   EXTRA_CHARGES: 'anshu_coaching_extra_charges_v2'
 };
 
-// Initial Seed Data (Only loaded once on very first launch!)
+// Initial Seed Data
 const INITIAL_STUDENTS = [
   {
     id: 1,
@@ -179,7 +179,6 @@ class DBService {
   }
 
   init() {
-    // Only load initial seed data if localStorage is completely empty!
     if (!localStorage.getItem(STORAGE_KEYS.STUDENTS)) {
       this.resetToDefaults();
     }
@@ -199,6 +198,11 @@ class DBService {
   getStudentById(id) {
     const students = this.getStudents();
     return students.find(s => s.id === Number(id));
+  }
+
+  getStudentsByBoard(boardName) {
+    const students = this.getStudents();
+    return students.filter(s => s.status === 'Active' && (s.board === boardName || (!s.board && boardName === 'State Board')));
   }
 
   addStudent(studentData) {
@@ -232,7 +236,6 @@ class DBService {
     students = students.filter(s => s.id !== Number(id));
     localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(students));
 
-    // Also remove associated payments
     let payments = this.getPayments();
     payments = payments.filter(p => p.student_id !== Number(id));
     localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(payments));
@@ -267,7 +270,7 @@ class DBService {
     return newPayment;
   }
 
-  // --- Financial Engine & Month Breakdown (Uses real current date automatically!) ---
+  // --- Financial Engine & Month Breakdown ---
   calculateStudentFinancials(studentId, referenceDate = new Date()) {
     const student = this.getStudentById(studentId);
     if (!student) return null;
@@ -367,7 +370,8 @@ class DBService {
     const currentMonthName = MONTH_NAMES[referenceDate.getMonth()];
 
     const totalStudents = students.length;
-    const activeStudents = students.filter(s => s.status === 'Active').length;
+    const activeStudentsList = students.filter(s => s.status === 'Active');
+    const activeStudents = activeStudentsList.length;
 
     let thisMonthCollection = 0;
     let thisYearCollection = 0;
@@ -385,7 +389,7 @@ class DBService {
     let totalAggregateDue = 0;
     const pendingStudentsList = [];
 
-    students.filter(s => s.status === 'Active').forEach(student => {
+    activeStudentsList.forEach(student => {
       const fin = this.calculateStudentFinancials(student.id, referenceDate);
       if (fin && fin.totalCurrentDue > 0) {
         pendingStudentsCount++;
@@ -399,6 +403,23 @@ class DBService {
       }
     });
 
+    // Board-wise breakdown
+    const boardCounts = {
+      'CBSE': 0,
+      'State Board': 0,
+      'ICSE': 0,
+      'Other': 0
+    };
+
+    activeStudentsList.forEach(s => {
+      const b = s.board || 'State Board';
+      if (boardCounts[b] !== undefined) {
+        boardCounts[b]++;
+      } else {
+        boardCounts['Other']++;
+      }
+    });
+
     return {
       totalStudents,
       activeStudents,
@@ -406,7 +427,8 @@ class DBService {
       thisYearCollection,
       pendingStudentsCount,
       totalAggregateDue,
-      pendingStudentsList
+      pendingStudentsList,
+      boardCounts
     };
   }
 

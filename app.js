@@ -8,7 +8,8 @@ let selectedStudentForCollect = null;
 let profileStudentId = null;
 let editStudentId = null;
 let selectedCalendarDay = null;
-let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'calendar-day', 'receipt'
+let selectedBoardForList = null;
+let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'board-list', 'calendar-day', 'receipt'
 let receiptData = null;
 
 // Initialize Application, PWA Service Worker & Back Button Lock
@@ -19,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initPWA();
 });
 
-// PWA Back Button Lock (Prevents exiting app when pressing physical/gesture back button)
+// PWA Back Button Lock
 function initHistoryLock() {
   history.pushState(null, '', location.href);
   window.onpopstate = function() {
@@ -73,7 +74,6 @@ function renderCurrentTab() {
   const headerEl = document.querySelector('.app-header');
   if (!contentEl) return;
 
-  // If not logged in, render Password-only Admin Login View
   if (!isLoggedIn) {
     if (navEl) navEl.style.display = 'none';
     if (headerEl) headerEl.style.display = 'none';
@@ -81,7 +81,6 @@ function renderCurrentTab() {
     return;
   }
 
-  // If logged in, show Header and Bottom Nav
   if (navEl) navEl.style.display = 'flex';
   if (headerEl) headerEl.style.display = 'flex';
 
@@ -185,6 +184,9 @@ window.openModal = function(modalName, payload = null) {
   if (modalName === 'calendar-day' && payload) {
     selectedCalendarDay = payload;
   }
+  if (modalName === 'board-list' && payload) {
+    selectedBoardForList = payload;
+  }
   renderActiveModal();
 };
 
@@ -194,6 +196,7 @@ window.closeModal = function() {
   profileStudentId = null;
   editStudentId = null;
   selectedCalendarDay = null;
+  selectedBoardForList = null;
   receiptData = null;
   renderActiveModal();
 };
@@ -226,6 +229,48 @@ function renderDashboardView(metrics) {
         <div class="metric-lbl" style="color:var(--status-overdue-text);">PENDING DUES 🔍</div>
         <div class="metric-val" style="color:var(--status-overdue-text)">₹${metrics.totalAggregateDue}</div>
         <div class="metric-sub" style="font-weight:700; color:var(--status-overdue-text);">${metrics.pendingStudentsCount} Students (Tap for list)</div>
+      </div>
+    </div>
+
+    <!-- Board-Wise Student Count Breakdown Section -->
+    <div class="glass-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <h3 style="font-size:13px; font-weight:800; color:var(--emerald-950);">Board-Wise Student Count</h3>
+        <span style="font-size:10px; color:var(--emerald-600); font-weight:700;">💡 Tap to view list</span>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <div class="clickable-card" onclick="openModal('board-list', 'CBSE')" style="padding:10px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:14px;">
+          <div style="font-size:10px; font-weight:800; color:var(--emerald-600);">CBSE BOARD</div>
+          <div style="font-size:18px; font-weight:800; color:var(--emerald-950); margin-top:2px;">
+            ${metrics.boardCounts['CBSE'] || 0} <span style="font-size:10px; font-weight:600; color:var(--emerald-600);">Students</span>
+          </div>
+          <div style="font-size:9px; color:var(--emerald-600); margin-top:2px; font-weight:700;">Tap to view ➔</div>
+        </div>
+
+        <div class="clickable-card" onclick="openModal('board-list', 'State Board')" style="padding:10px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:14px;">
+          <div style="font-size:10px; font-weight:800; color:var(--emerald-600);">STATE / MP BOARD</div>
+          <div style="font-size:18px; font-weight:800; color:var(--emerald-950); margin-top:2px;">
+            ${metrics.boardCounts['State Board'] || 0} <span style="font-size:10px; font-weight:600; color:var(--emerald-600);">Students</span>
+          </div>
+          <div style="font-size:9px; color:var(--emerald-600); margin-top:2px; font-weight:700;">Tap to view ➔</div>
+        </div>
+
+        <div class="clickable-card" onclick="openModal('board-list', 'ICSE')" style="padding:10px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:14px;">
+          <div style="font-size:10px; font-weight:800; color:var(--emerald-600);">ICSE BOARD</div>
+          <div style="font-size:18px; font-weight:800; color:var(--emerald-950); margin-top:2px;">
+            ${metrics.boardCounts['ICSE'] || 0} <span style="font-size:10px; font-weight:600; color:var(--emerald-600);">Students</span>
+          </div>
+          <div style="font-size:9px; color:var(--emerald-600); margin-top:2px; font-weight:700;">Tap to view ➔</div>
+        </div>
+
+        <div class="clickable-card" onclick="openModal('board-list', 'Other')" style="padding:10px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:14px;">
+          <div style="font-size:10px; font-weight:800; color:var(--emerald-600);">OTHER BOARDS</div>
+          <div style="font-size:18px; font-weight:800; color:var(--emerald-950); margin-top:2px;">
+            ${metrics.boardCounts['Other'] || 0} <span style="font-size:10px; font-weight:600; color:var(--emerald-600);">Students</span>
+          </div>
+          <div style="font-size:9px; color:var(--emerald-600); margin-top:2px; font-weight:700;">Tap to view ➔</div>
+        </div>
       </div>
     </div>
 
@@ -602,10 +647,9 @@ function renderActiveModal() {
               <div class="form-group">
                 <label class="form-label">Board (Optional)</label>
                 <select name="board" class="form-control">
-                  <option value="">None / Select</option>
                   <option value="CBSE">CBSE</option>
+                  <option value="State Board">State / MP Board</option>
                   <option value="ICSE">ICSE</option>
-                  <option value="State Board">State Board</option>
                   <option value="Other">Other</option>
                 </select>
               </div>
@@ -684,10 +728,9 @@ function renderActiveModal() {
               <div class="form-group">
                 <label class="form-label">Board (Optional)</label>
                 <select name="board" class="form-control">
-                  <option value="">None / Select</option>
                   <option value="CBSE" ${student.board === 'CBSE' ? 'selected' : ''}>CBSE</option>
+                  <option value="State Board" ${student.board === 'State Board' ? 'selected' : ''}>State / MP Board</option>
                   <option value="ICSE" ${student.board === 'ICSE' ? 'selected' : ''}>ICSE</option>
-                  <option value="State Board" ${student.board === 'State Board' ? 'selected' : ''}>State Board</option>
                   <option value="Other" ${student.board === 'Other' ? 'selected' : ''}>Other</option>
                 </select>
               </div>
@@ -703,7 +746,55 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 3: Student Profile Drawer
+  // Modal 3: Board Student List Drawer (~70% Height Bottom Sheet Modal)
+  else if (activeModal === 'board-list' && selectedBoardForList) {
+    const boardStudents = db.getStudentsByBoard(selectedBoardForList);
+    const displayBoardTitle = selectedBoardForList === 'State Board' ? 'State / MP Board' : selectedBoardForList;
+
+    container.innerHTML = `
+      <div class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+          <div class="modal-header">
+            <div>
+              <h3 class="modal-title">${displayBoardTitle} Students</h3>
+              <div style="font-size:11px; color:var(--emerald-600); font-weight:700;">
+                Total Enrolled: ${boardStudents.length} Student(s)
+              </div>
+            </div>
+            <button class="close-btn" onclick="closeModal()">✕</button>
+          </div>
+
+          <div style="max-height:260px; overflow-y:auto; margin-bottom:14px;">
+            ${boardStudents.length > 0 ? boardStudents.map(s => {
+              const fin = db.calculateStudentFinancials(s.id);
+              return `
+                <div class="student-card-item" onclick="closeModal(); openModal('student-profile', ${s.id});" style="margin-bottom:8px;">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="student-avatar">${s.gender === 'Female' ? '👧' : '👦'}</span>
+                    <div>
+                      <div style="font-size:12px; font-weight:700; color:var(--emerald-950);">${s.name}</div>
+                      <div style="font-size:10px; color:var(--emerald-600);">${s.class} • ₹${s.monthly_fee}/mo ${s.school ? '• ' + s.school : ''}</div>
+                    </div>
+                  </div>
+                  <div style="text-align:right;">
+                    ${renderStatusBadge(fin.dueStatus, fin.totalCurrentDue)}
+                  </div>
+                </div>
+              `;
+            }).join('') : `
+              <div style="text-align:center; padding:30px 10px; color:var(--emerald-600); font-size:12px;">
+                No active students enrolled under ${displayBoardTitle}.
+              </div>
+            `}
+          </div>
+
+          <button class="btn-secondary" style="width:100%; padding:10px;" onclick="closeModal()">Close List</button>
+        </div>
+      </div>
+    `;
+  }
+
+  // Modal 4: Student Profile Drawer
   else if (activeModal === 'student-profile' && profileStudentId) {
     const fin = db.calculateStudentFinancials(profileStudentId);
     if (!fin) return;
@@ -719,7 +810,7 @@ function renderActiveModal() {
               <div>
                 <h3 class="modal-title">${fin.student.name}</h3>
                 <div style="font-size:10px; color:var(--emerald-600);">
-                  ${fin.student.class} ${fin.student.status !== 'Active' ? '• ' + fin.student.status : ''}
+                  ${fin.student.class} ${fin.student.board ? '• ' + fin.student.board : ''} ${fin.student.status !== 'Active' ? '• ' + fin.student.status : ''}
                 </div>
               </div>
             </div>
@@ -773,7 +864,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 4: Calendar Day Details Bottom Sheet
+  // Modal 5: Calendar Day Details Bottom Sheet
   else if (activeModal === 'calendar-day' && selectedCalendarDay) {
     const students = db.getStudents();
     const dueStudents = students.filter(s => s.status === 'Active' && new Date(s.joining_date).getDate() === selectedCalendarDay);
@@ -821,7 +912,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 5: Dashboard Pending Dues List
+  // Modal 6: Dashboard Pending Dues List
   else if (activeModal === 'pending-list') {
     const metrics = db.getDashboardMetrics();
     container.innerHTML = `
@@ -861,7 +952,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 6: Receipt Sheet
+  // Modal 7: Receipt Sheet
   else if (activeModal === 'receipt' && receiptData) {
     container.innerHTML = `
       <div class="modal-overlay" onclick="closeModal()">
