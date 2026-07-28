@@ -338,7 +338,7 @@ class DBService {
     return true;
   }
 
-  // --- Payments & Receipts (Strict: No receipt if paid_amount <= 0 without extra items) ---
+  // --- Payments, Receipts & Mistaken Payment Cancellation / Reversal ---
   getPayments() {
     return JSON.parse(localStorage.getItem(STORAGE_KEYS.PAYMENTS) || '[]');
   }
@@ -397,6 +397,30 @@ class DBService {
     payments.push(newPayment);
     localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(payments));
     return newPayment;
+  }
+
+  deletePayment(paymentId) {
+    let payments = this.getPayments();
+    const targetPayment = payments.find(p => p.id === Number(paymentId));
+    if (!targetPayment) return false;
+
+    // Filter out target payment
+    payments = payments.filter(p => p.id !== Number(paymentId));
+    localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(payments));
+
+    // If this payment was clearing an extra charge item, revert that item back to UNPAID in Khatabook!
+    if (targetPayment.extra_item_name) {
+      let charges = this.getExtraCharges();
+      const matchIdx = charges.findIndex(c => c.student_id === targetPayment.student_id && c.item_name === targetPayment.extra_item_name && c.status === 'PAID');
+      if (matchIdx !== -1) {
+        charges[matchIdx].status = 'UNPAID';
+        delete charges[matchIdx].paid_date;
+        delete charges[matchIdx].payment_mode;
+        localStorage.setItem(STORAGE_KEYS.EXTRA_CHARGES, JSON.stringify(charges));
+      }
+    }
+
+    return true;
   }
 
   // --- Financial Engine with Multi-Month Cycle Expiry & Isolated Khatabook Ledger ---

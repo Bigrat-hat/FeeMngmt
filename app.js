@@ -7,7 +7,7 @@ let searchQuery = '';
 let selectedStudentForCollect = null;
 let profileStudentId = null;
 let editStudentId = null;
-let selectedCalendarDay = null;
+let selectedCalendarDay = new Date().getDate(); // Defaults to live Today!
 let selectedBoardForList = null;
 let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'board-list', 'calendar-day', 'receipt', 'add-khata', 'backup-restore', 'clear-khata-modal', 'custom-alert-modal'
 let receiptData = null;
@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMidnightRealtimeClock();
 });
 
-// Custom In-App Alert System (Replaces window.alert and window.confirm)
+// Custom In-App Alert System
 window.showAppAlert = function(title, message) {
   customAlertState = {
     title: title || 'Notice',
@@ -58,6 +58,7 @@ function initMidnightRealtimeClock() {
     const currentDayNumber = new Date().getDate();
     if (currentDayNumber !== lastRenderedDayNumber) {
       lastRenderedDayNumber = currentDayNumber;
+      selectedCalendarDay = currentDayNumber;
       renderCurrentTab(); // Auto-refresh today's highlight & metrics at midnight!
     }
   }, 15000);
@@ -263,7 +264,6 @@ window.closeModal = function() {
   selectedStudentForCollect = null;
   profileStudentId = null;
   editStudentId = null;
-  selectedCalendarDay = null;
   selectedBoardForList = null;
   activeKhataItemToClear = null;
   receiptData = null;
@@ -422,7 +422,7 @@ function initDashboardCharts() {
   });
 }
 
-// --- 2. Students Directory View (Shows Unpaid Khata Amount in Red Directly on Row!) ---
+// --- 2. Students Directory View (Instant Real-Time Khata Badge!) ---
 function renderStudentsView(students) {
   return `
     <!-- Search Pill -->
@@ -508,7 +508,7 @@ function renderStatusBadge(status, dueAmount) {
   }
 }
 
-// --- 3. Collect Fees View (Tuition Fee Collection Only) ---
+// --- 3. Collect Fees View ---
 function renderCollectFeesView(students) {
   const activeStudents = students.filter(s => s.status === 'Active' || (s.status === 'Left' && db.calculateStudentFinancials(s.id).totalCurrentDue > 0));
   const selectedStudent = selectedStudentForCollect ? db.getStudentById(selectedStudentForCollect) : activeStudents[0];
@@ -603,9 +603,10 @@ function renderCollectFeesView(students) {
                 ${p.extra_item_name ? ' • Extra: ' + p.extra_item_name + ' (₹' + p.extra_charge_amount + ')' : ''}
               </div>
             </div>
-            <div style="text-align:right; display:flex; align-items:center; gap:8px;">
+            <div style="text-align:right; display:flex; align-items:center; gap:6px;">
               <strong style="color:#254B33; font-size:12px;">₹${p.paid_amount + (p.extra_charge_amount || 0)}</strong>
-              <button class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="openModal('receipt', ${p.id})">🧾 Receipt</button>
+              <button class="btn-secondary" style="padding:3px 7px; font-size:9px;" onclick="openModal('receipt', ${p.id})">🧾 Receipt</button>
+              <button class="btn-secondary" style="padding:3px 6px; font-size:9px; color:#DC2626; border-color:rgba(220,38,38,0.3);" onclick="handleVoidPayment(${p.id})">↩️ Void</button>
             </div>
           </div>
         `).join('') : `
@@ -674,11 +675,12 @@ window.handleFeeCollection = function(event) {
   openModal('receipt');
 };
 
-// --- 4. INTERACTIVE SWITCHABLE MONTH CALENDAR + DUAL PANELS ---
+// --- 4. INTERACTIVE LIVE CALENDAR VIEW WITH SELECTED DATE MASTER REPORT ---
 function renderCalendarView(students) {
   const currentMonthName = MONTH_NAMES[calendarViewMonthIdx];
   const isCurrentLiveMonth = (calendarViewYear === new Date().getFullYear() && calendarViewMonthIdx === new Date().getMonth());
 
+  // By default, Today's live date is selected!
   const selectedDay = selectedCalendarDay || (isCurrentLiveMonth ? new Date().getDate() : 1);
   
   const joiningStudents = students.filter(s => {
@@ -697,6 +699,8 @@ function renderCalendarView(students) {
     ...p,
     student: studentMap[p.student_id] || { name: 'Student', class: '' }
   }));
+
+  const totalDailyCollection = dailyPayments.reduce((sum, p) => sum + p.paid_amount + (p.extra_charge_amount || 0), 0);
 
   return `
     <div class="glass-card">
@@ -719,6 +723,20 @@ function renderCalendarView(students) {
       </div>
     </div>
 
+    <!-- SELECTED DATE MASTER REPORT BAR -->
+    <div class="formula-box" style="margin-bottom:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <strong style="font-size:12px; color:var(--emerald-950);">📅 Daily Master Report: ${currentMonthName} ${selectedDay}, ${calendarViewYear}</strong>
+          <div style="font-size:9px; color:var(--emerald-600); font-weight:700;">${joiningStudents.length} Joining Anniversary • ${dailyPayments.length} Fee Transactions</div>
+        </div>
+        <div style="text-align:right;">
+          <span style="font-size:9px; color:var(--emerald-600); font-weight:700;">Total Collected:</span>
+          <div style="font-size:16px; font-weight:800; color:#254B33;">₹${totalDailyCollection}</div>
+        </div>
+      </div>
+    </div>
+
     <!-- DUAL PANELS BELOW CALENDAR -->
     
     <!-- PANEL 1: Joining Anniversary Register -->
@@ -737,7 +755,7 @@ function renderCalendarView(students) {
             <button class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="openModal('student-profile', ${s.id})">Profile</button>
           </div>
         `).join('') : `
-          <div style="text-align:center; padding:10px; color:var(--emerald-600); font-size:10px;">No student joining anniversary on the ${selectedDay}th.</div>
+          <div style="text-align:center; padding:10px; color:var(--emerald-600); font-size:10px;">No student joining anniversary on ${currentMonthName} ${selectedDay}.</div>
         `}
       </div>
     </div>
@@ -758,10 +776,11 @@ function renderCalendarView(students) {
             <div style="text-align:right; display:flex; align-items:center; gap:6px;">
               <strong style="color:#254B33; font-size:12px;">₹${p.paid_amount + (p.extra_charge_amount || 0)}</strong>
               <button class="btn-secondary" style="padding:3px 7px; font-size:9px;" onclick="openModal('receipt', ${p.id})">🧾 Receipt</button>
+              <button class="btn-secondary" style="padding:3px 6px; font-size:9px; color:#DC2626; border-color:rgba(220,38,38,0.3);" onclick="handleVoidPayment(${p.id})">↩️ Void</button>
             </div>
           </div>
         `).join('') : `
-          <div style="text-align:center; padding:10px; color:var(--emerald-600); font-size:10px;">No fee collection transactions recorded on this date.</div>
+          <div style="text-align:center; padding:10px; color:var(--emerald-600); font-size:10px;">No fee collection transactions recorded on ${currentMonthName} ${selectedDay}.</div>
         `}
       </div>
     </div>
@@ -1224,7 +1243,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 6: Student Profile Drawer (Khatabook Udhaar Red Ledger Integrated!)
+  // Modal 6: Student Profile Drawer (Khatabook Udhaar Red Ledger & Void Payment Button)
   else if (activeModal === 'student-profile' && profileStudentId) {
     const fin = db.calculateStudentFinancials(profileStudentId);
     if (!fin) return;
@@ -1338,7 +1357,7 @@ function renderActiveModal() {
             `).join('')}
           </div>
 
-          <!-- Section B: Payment Transaction & Digital Receipt History -->
+          <!-- Section B: Payment Transaction & Digital Receipt History + Void Button -->
           <h4 style="font-size:11px; font-weight:800; color:var(--emerald-800); margin-bottom:6px;">Payment Receipts & Transaction Log 🧾</h4>
           <div style="max-height:110px; overflow-y:auto; margin-bottom:12px;">
             ${studentPayments.length > 0 ? studentPayments.map(p => `
@@ -1350,7 +1369,10 @@ function renderActiveModal() {
                     ${p.extra_item_name ? ' • Extra: ' + p.extra_item_name + ' (₹' + p.extra_charge_amount + ')' : ''}
                   </div>
                 </div>
-                <button class="btn-secondary" style="padding:3px 7px; font-size:9px;" onclick="openModal('receipt', ${p.id})">🧾 View Receipt</button>
+                <div style="display:flex; gap:4px;">
+                  <button class="btn-secondary" style="padding:3px 6px; font-size:9px;" onclick="openModal('receipt', ${p.id})">🧾 Receipt</button>
+                  <button class="btn-secondary" style="padding:3px 6px; font-size:9px; color:#DC2626; border-color:rgba(220,38,38,0.3);" onclick="handleVoidPayment(${p.id})">↩️ Void</button>
+                </div>
               </div>
             `).join('') : `
               <div style="text-align:center; padding:10px; color:var(--emerald-600); font-size:10px;">No transaction receipts logged yet.</div>
@@ -1462,7 +1484,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 9: Digital Receipt Sheet
+  // Modal 9: Digital Receipt Sheet (with Void / Cancel Button!)
   else if (activeModal === 'receipt' && receiptData) {
     const totalCollected = receiptData.payment.paid_amount + (receiptData.payment.extra_charge_amount || 0);
 
@@ -1504,7 +1526,13 @@ function renderActiveModal() {
               </div>
             ` : ''}
           </div>
-          <button class="btn-primary" style="width:100%; margin-top:12px;" onclick="closeModal()">Done</button>
+
+          <div style="display:flex; gap:8px; margin-top:12px;">
+            <button class="btn-primary" style="flex:2; padding:10px;" onclick="closeModal()">Done</button>
+            <button class="btn-secondary" style="flex:1; padding:10px; color:#DC2626; border-color:rgba(220,38,38,0.4);" onclick="handleVoidPayment(${receiptData.payment.id})">
+              ↩️ Cancel Payment
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -1520,6 +1548,24 @@ window.executeCustomConfirm = function() {
   } else {
     closeModal();
   }
+};
+
+window.handleVoidPayment = function(paymentId) {
+  const payment = db.getPaymentById(paymentId);
+  if (!payment) return;
+  const student = db.getStudentById(payment.student_id);
+  const totalAmt = payment.paid_amount + (payment.extra_charge_amount || 0);
+
+  showAppConfirm(
+    'Void & Cancel Payment',
+    `⚠️ Are you sure you want to void & cancel this payment of ₹${totalAmt} for ${student ? student.name : 'Student'}?\n\nThis will reverse the fee back to unpaid status in the student's dues ledger.`,
+    () => {
+      db.deletePayment(paymentId);
+      closeModal();
+      renderCurrentTab();
+      showAppAlert('Payment Voided', `Payment transaction of ₹${totalAmt} has been cancelled and reversed.`);
+    }
+  );
 };
 
 // Backup & Restore Handlers
@@ -1581,6 +1627,7 @@ window.handleAddKhataSubmit = function(event) {
   });
 
   closeModal();
+  renderCurrentTab(); // Instant real-time background re-render!
   openModal('student-profile', studentId);
 };
 
@@ -1602,6 +1649,8 @@ window.submitClearKhataPayment = function(event) {
 
   const result = db.clearExtraCharge(activeKhataItemToClear.chargeId, paymentMode);
 
+  renderCurrentTab(); // Instant real-time background re-render!
+
   if (result && result.payment) {
     const student = db.getStudentById(result.charge.student_id);
     receiptData = {
@@ -1611,8 +1660,6 @@ window.submitClearKhataPayment = function(event) {
       remainingArrears: 0
     };
     openModal('receipt');
-  } else {
-    renderCurrentTab();
   }
 };
 

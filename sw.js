@@ -1,4 +1,4 @@
-const CACHE_NAME = 'anshu-coaching-v22';
+const CACHE_NAME = 'anshu-coaching-v23';
 
 // Force Service Worker to activate immediately on updates
 self.addEventListener('install', (event) => {
