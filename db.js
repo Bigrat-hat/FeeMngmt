@@ -1,5 +1,5 @@
 /**
- * Anshu Coaching Fees Management System - Local Database & Financial Engine
+ * Anshu Coaching Classes - Fees Management System Database & Financial Engine
  * Version: 1.0.0
  */
 
@@ -267,8 +267,8 @@ class DBService {
     return newPayment;
   }
 
-  // --- Financial Engine & Month Breakdown ---
-  calculateStudentFinancials(studentId, referenceDate = new Date('2026-07-28')) {
+  // --- Financial Engine & Month Breakdown (Uses real current date automatically!) ---
+  calculateStudentFinancials(studentId, referenceDate = new Date()) {
     const student = this.getStudentById(studentId);
     if (!student) return null;
 
@@ -359,7 +359,7 @@ class DBService {
     };
   }
 
-  getDashboardMetrics(referenceDate = new Date('2026-07-28')) {
+  getDashboardMetrics(referenceDate = new Date()) {
     const students = this.getStudents();
     const payments = this.getPayments();
 
@@ -410,7 +410,7 @@ class DBService {
     };
   }
 
-  getMonthlyRevenueTrend(year = 2026) {
+  getMonthlyRevenueTrend(year = new Date().getFullYear()) {
     const payments = this.getPayments();
     const trend = MONTH_NAMES.map(month => ({
       month: month.substring(0, 3),
