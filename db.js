@@ -295,7 +295,7 @@ class DBService {
     return newPayment;
   }
 
-  // --- Financial Engine with Advance Balance & 1-Month Cycle Calculation ---
+  // --- Financial Engine with Intuitive Enrollment Grace Period & Cycle Engine ---
   calculateStudentFinancials(studentId, referenceDate = new Date()) {
     const student = this.getStudentById(studentId);
     if (!student) return null;
@@ -308,15 +308,20 @@ class DBService {
 
     const joiningDay = joiningDate.getDate();
 
+    // Months elapsed since joining
+    const monthsElapsed = (refYear - joiningDate.getFullYear()) * 12 + (refMonthIdx - joiningDate.getMonth());
+
     const billingMonths = [];
     let startY = joiningDate.getFullYear();
     let startM = joiningDate.getMonth();
 
     while (startY < refYear || (startY === refYear && startM <= refMonthIdx)) {
       const isPastMonth = (startY < refYear) || (startY === refYear && startM < refMonthIdx);
-      const isCurrentMonthCycleComplete = (startY === refYear && startM === refMonthIdx && refDay >= joiningDay);
+      const isCurrentMonthCycleComplete = (startY === refYear && startM === refMonthIdx && refDay > joiningDay);
+      const isEnrollmentDay = (monthsElapsed === 0 && refDay === joiningDay);
 
-      if (isPastMonth || isCurrentMonthCycleComplete) {
+      // Include in billing ledger if past month, or cycle complete, or enrollment baseline
+      if (isPastMonth || isCurrentMonthCycleComplete || isEnrollmentDay) {
         billingMonths.push({
           year: startY,
           monthIdx: startM,
@@ -385,7 +390,10 @@ class DBService {
     if (totalCurrentDue === 0) {
       dueStatus = 'PAID';
     } else {
-      if (refDay === joiningDay) {
+      // Newly enrolled today -> Status is UPCOMING (1st month fee due next month anniversary), NOT Overdue alert!
+      if (monthsElapsed === 0 && refDay <= joiningDay) {
+        dueStatus = 'UPCOMING';
+      } else if (refDay === joiningDay) {
         dueStatus = 'DUE TODAY';
       } else if (refDay > joiningDay || monthDetails.filter(m => !m.isPaid).length > 1) {
         dueStatus = 'OVERDUE';
@@ -448,7 +456,7 @@ class DBService {
 
     students.forEach(student => {
       const fin = this.calculateStudentFinancials(student.id, referenceDate);
-      if (fin && fin.totalCurrentDue > 0) {
+      if (fin && fin.totalCurrentDue > 0 && fin.dueStatus === 'OVERDUE') {
         pendingStudentsCount++;
         totalAggregateDue += fin.totalCurrentDue;
         pendingStudentsList.push({
