@@ -1,11 +1,13 @@
 import { db, MONTH_NAMES } from './db.js';
 
 // Application State
+let isLoggedIn = localStorage.getItem('anshu_admin_logged_in') === 'true';
 let currentTab = 'dashboard';
 let searchQuery = '';
 let selectedStudentForCollect = null;
 let profileStudentId = null;
-let activeModal = null; // 'add-student', 'collect-fee', 'student-profile', 'pending-list', 'receipt'
+let editStudentId = null;
+let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'receipt'
 let receiptData = null;
 
 // Initialize Application & PWA Service Worker
@@ -44,7 +46,21 @@ function updateNavActiveState() {
 
 function renderCurrentTab() {
   const contentEl = document.getElementById('tab-content');
+  const navEl = document.querySelector('.fixed-bottom-nav');
+  const headerEl = document.querySelector('.app-header');
   if (!contentEl) return;
+
+  // If not logged in, render Admin Login View!
+  if (!isLoggedIn) {
+    if (navEl) navEl.style.display = 'none';
+    if (headerEl) headerEl.style.display = 'none';
+    contentEl.innerHTML = renderAdminLoginView();
+    return;
+  }
+
+  // If logged in, show Header and Bottom Nav
+  if (navEl) navEl.style.display = 'flex';
+  if (headerEl) headerEl.style.display = 'flex';
 
   const metrics = db.getDashboardMetrics();
   const students = db.getStudents();
@@ -74,6 +90,73 @@ function renderCurrentTab() {
   renderActiveModal();
 }
 
+// --- Admin Login Screen ---
+function renderAdminLoginView() {
+  return `
+    <div style="display:flex; flex-direction:column; justify-content:center; min-height:100%; padding:20px 10px;">
+      
+      <div style="text-align:center; margin-bottom:28px;">
+        <div class="brand-icon" style="width:56px; height:56px; font-size:26px; border-radius:16px; margin:0 auto 12px auto; box-shadow:0 10px 24px rgba(38,58,71,0.25);">A</div>
+        <h1 style="font-size:24px; font-weight:800; color:var(--slate-900);">Anshu Coaching</h1>
+        <p style="font-size:12px; color:var(--slate-500); font-weight:600; margin-top:2px;">Admin Portal Authentication</p>
+      </div>
+
+      <div class="glass-card" style="padding:22px; border-radius:24px;">
+        <h3 style="font-size:16px; font-weight:800; color:var(--slate-900); margin-bottom:16px;">Sign In</h3>
+
+        <form onsubmit="handleAdminLoginSubmit(event)">
+          <div class="form-group">
+            <label class="form-label">Username / Email</label>
+            <input type="text" id="loginUsername" class="form-control" value="admin" required placeholder="admin" />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="loginPassword" class="form-control" value="admin123" required placeholder="••••••••" />
+          </div>
+
+          <div id="loginErrorMsg" style="color:var(--status-overdue-text); font-size:11px; font-weight:700; margin-bottom:10px; display:none;">
+            Invalid username or password!
+          </div>
+
+          <button type="submit" class="btn-primary" style="width:100%; padding:12px; font-size:14px; margin-top:8px;">
+            Sign In ➔
+          </button>
+        </form>
+      </div>
+
+      <div style="text-align:center; margin-top:20px; font-size:10px; color:var(--slate-500);">
+        Anshu Coaching Fees Blueprint v1.0.0
+      </div>
+
+    </div>
+  `;
+}
+
+window.handleAdminLoginSubmit = function(e) {
+  e.preventDefault();
+  const u = document.getElementById('loginUsername').value;
+  const p = document.getElementById('loginPassword').value;
+
+  if (u.trim() === 'admin' && p.trim() === 'admin123') {
+    isLoggedIn = true;
+    localStorage.setItem('anshu_admin_logged_in', 'true');
+    renderCurrentTab();
+  } else {
+    const err = document.getElementById('loginErrorMsg');
+    if (err) err.style.display = 'block';
+  }
+};
+
+window.handleAdminLogout = function() {
+  if (confirm('Log out from Anshu Coaching Admin Portal?')) {
+    isLoggedIn = false;
+    localStorage.removeItem('anshu_admin_logged_in');
+    currentTab = 'dashboard';
+    renderCurrentTab();
+  }
+};
+
 // Modal Trigger Helpers
 window.openModal = function(modalName, payload = null) {
   activeModal = modalName;
@@ -83,6 +166,9 @@ window.openModal = function(modalName, payload = null) {
   if (modalName === 'student-profile' && payload) {
     profileStudentId = payload;
   }
+  if (modalName === 'edit-student' && payload) {
+    editStudentId = payload;
+  }
   renderActiveModal();
 };
 
@@ -90,6 +176,7 @@ window.closeModal = function() {
   activeModal = null;
   selectedStudentForCollect = null;
   profileStudentId = null;
+  editStudentId = null;
   receiptData = null;
   renderActiveModal();
 };
@@ -117,7 +204,7 @@ function renderDashboardView(metrics) {
         <div class="metric-sub">Fiscal YTD</div>
       </div>
 
-      <!-- Clickable Pending Dues Card (Opens Pending Students Bottom Sheet) -->
+      <!-- Clickable Pending Dues Card -->
       <div class="glass-card metric-card-compact clickable-card" onclick="openModal('pending-list')" style="border:1.5px solid rgba(239, 68, 68, 0.4); background:rgba(255,245,245,0.9);">
         <div class="metric-lbl" style="color:var(--status-overdue-text);">PENDING DUES 🔍</div>
         <div class="metric-val" style="color:var(--status-overdue-text)">₹${metrics.totalAggregateDue}</div>
@@ -134,7 +221,7 @@ function renderDashboardView(metrics) {
 
     <!-- Carry Forward Formula Highlight -->
     <div class="formula-box">
-      <div class="formula-title">💡 Carry-Forward Arrears Formula</div>
+      <div class="formula-title">💡 Arrears Carry-Forward Formula</div>
       <div class="formula-text">
         Monthly Fee ₹300, Paid ₹250 ➔ Balance ₹50.<br/>
         Next month total payable automatically compounds: <strong>₹300 (New Fee) + ₹50 (Arrears) = ₹350</strong>.
@@ -200,7 +287,7 @@ function renderStudentsView(students) {
       <input type="text" class="search-pill-input" placeholder="Search student name or class..." value="${searchQuery}" oninput="onStudentSearchInput(event)" />
     </div>
 
-    <p style="font-size:10px; color:var(--slate-500); margin-bottom:8px; text-align:right;">💡 Tap any student to open profile & monthly fee status</p>
+    <p style="font-size:10px; color:var(--slate-500); margin-bottom:8px; text-align:right;">💡 Tap any student to open profile, edit details & fee status</p>
 
     <!-- Student Cards List -->
     <div>
@@ -404,6 +491,12 @@ function renderSettingsView() {
       <h3 style="font-size:15px; font-weight:800; color:var(--slate-900); margin-bottom:10px;">Anshu Coaching Settings</h3>
       <p style="font-size:11px; color:var(--slate-500); margin-bottom:14px;">Classes: Class 1 to Class 10</p>
 
+      <div style="margin-bottom:10px;">
+        <button class="btn-secondary" style="width:100%; padding:10px;" onclick="handleAdminLogout()">
+          🔒 Logout Admin Session
+        </button>
+      </div>
+
       <button class="btn-secondary" style="width:100%; border-color:var(--status-overdue-text); color:var(--status-overdue-text); padding:10px;" onclick="resetDemoData()">
         ⚠️ Reset Demo Dataset
       </button>
@@ -411,7 +504,7 @@ function renderSettingsView() {
   `;
 }
 
-// --- Modal & Bottom Sheet Renderer (~70% Screen Height Drawers) ---
+// --- Modal & Bottom Sheet Renderer ---
 function renderActiveModal() {
   const container = document.getElementById('modal-container');
   if (!container) return;
@@ -421,7 +514,7 @@ function renderActiveModal() {
     return;
   }
 
-  // Modal 1: Add Student (Class 1 to 10 Options)
+  // Modal 1: Add Student
   if (activeModal === 'add-student') {
     container.innerHTML = `
       <div class="modal-overlay" onclick="closeModal()">
@@ -479,7 +572,66 @@ function renderActiveModal() {
     `;
   } 
 
-  // Modal 2: Student Profile & Month-wise Pending Dues Bottom Sheet (~70% Height)
+  // Modal 2: Edit Student Modal
+  else if (activeModal === 'edit-student' && editStudentId) {
+    const student = db.getStudentById(editStudentId);
+    if (!student) return;
+
+    container.innerHTML = `
+      <div class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+          <div class="modal-header">
+            <h3 class="modal-title">Edit Student Details</h3>
+            <button class="close-btn" onclick="closeModal()">✕</button>
+          </div>
+          <form onsubmit="handleEditStudentSubmit(event)">
+            <input type="hidden" name="id" value="${student.id}" />
+            
+            <div class="form-group">
+              <label class="form-label">Student Name *</label>
+              <input type="text" name="name" class="form-control" required value="${student.name}" />
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div class="form-group">
+                <label class="form-label">Gender</label>
+                <select name="gender" class="form-control">
+                  <option value="Male" ${student.gender === 'Male' ? 'selected' : ''}>Male 👦</option>
+                  <option value="Female" ${student.gender === 'Female' ? 'selected' : ''}>Female 👧</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Class</label>
+                <select name="class" class="form-control" required>
+                  ${[1,2,3,4,5,6,7,8,9,10].map(c => `
+                    <option value="Class ${c}" ${student.class === 'Class ' + c ? 'selected' : ''}>Class ${c}</option>
+                  `).join('')}
+                </select>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div class="form-group">
+                <label class="form-label">Monthly Fee (₹)</label>
+                <input type="number" name="monthly_fee" class="form-control" required value="${student.monthly_fee}" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Joining Date</label>
+                <input type="date" name="joining_date" class="form-control" required value="${student.joining_date}" />
+              </div>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top:12px;">
+              <button type="submit" class="btn-primary" style="flex:1;">Update Student</button>
+              <button type="button" class="btn-secondary" style="border-color:var(--status-overdue-text); color:var(--status-overdue-text);" onclick="handleDeleteStudent(${student.id})">Delete</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+  }
+
+  // Modal 3: Student Profile & Month-wise Pending Dues Bottom Sheet
   else if (activeModal === 'student-profile' && profileStudentId) {
     const fin = db.calculateStudentFinancials(profileStudentId);
     if (!fin) return;
@@ -496,10 +648,12 @@ function renderActiveModal() {
                 <div style="font-size:11px; color:var(--slate-500);">${fin.student.class} • Joining: ${fin.student.joining_date}</div>
               </div>
             </div>
-            <button class="close-btn" onclick="closeModal()">✕</button>
+            <div style="display:flex; gap:6px;">
+              <button class="btn-secondary" style="padding:4px 8px; font-size:10px;" onclick="openModal('edit-student', ${fin.student.id})">✏️ Edit</button>
+              <button class="close-btn" onclick="closeModal()">✕</button>
+            </div>
           </div>
 
-          <!-- Total Dues Highlight -->
           <div class="formula-box" style="margin-top:4px; margin-bottom:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
@@ -512,7 +666,7 @@ function renderActiveModal() {
 
           <h4 style="font-size:12px; font-weight:800; color:var(--slate-700); margin-bottom:8px;">Month-by-Month Fee Audit</h4>
           
-          <div style="max-height:220px; overflow-y:auto; margin-bottom:14px;">
+          <div style="max-height:200px; overflow-y:auto; margin-bottom:14px;">
             ${fin.billingMonths.map(bm => `
               <div class="month-pending-row">
                 <div>
@@ -529,15 +683,20 @@ function renderActiveModal() {
             `).join('')}
           </div>
 
-          <button class="btn-primary" style="width:100%; padding:11px;" onclick="closeModal(); switchTab('collect'); onStudentSelectForCollect(${fin.student.id});">
-            💳 Collect Fee for ${fin.student.name}
-          </button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn-primary" style="flex:1; padding:11px;" onclick="closeModal(); switchTab('collect'); onStudentSelectForCollect(${fin.student.id});">
+              💳 Collect Fee
+            </button>
+            <button class="btn-secondary" style="border-color:var(--status-overdue-text); color:var(--status-overdue-text); padding:11px;" onclick="handleDeleteStudent(${fin.student.id})">
+              🗑️ Delete
+            </button>
+          </div>
         </div>
       </div>
     `;
   }
 
-  // Modal 3: Dashboard "PENDING DUES" Tap -> List of All Pending Students (~70% Height)
+  // Modal 4: Dashboard "PENDING DUES" Tap List
   else if (activeModal === 'pending-list') {
     const metrics = db.getDashboardMetrics();
     container.innerHTML = `
@@ -577,7 +736,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 4: Payment Receipt Sheet
+  // Modal 5: Payment Receipt Sheet
   else if (activeModal === 'receipt' && receiptData) {
     container.innerHTML = `
       <div class="modal-overlay" onclick="closeModal()">
@@ -620,6 +779,30 @@ window.handleAddStudentSubmit = function(event) {
   });
   closeModal();
   renderCurrentTab();
+};
+
+window.handleEditStudentSubmit = function(event) {
+  event.preventDefault();
+  const form = event.target;
+  db.updateStudent(form.id.value, {
+    name: form.name.value,
+    gender: form.gender.value,
+    class: form.class.value,
+    monthly_fee: form.monthly_fee.value,
+    joining_date: form.joining_date.value
+  });
+  closeModal();
+  renderCurrentTab();
+};
+
+window.handleDeleteStudent = function(studentId) {
+  const student = db.getStudentById(studentId);
+  if (!student) return;
+  if (confirm(`Are you sure you want to delete student "${student.name}"? All payment records will be permanently removed.`)) {
+    db.deleteStudent(studentId);
+    closeModal();
+    renderCurrentTab();
+  }
 };
 
 window.resetDemoData = function() {

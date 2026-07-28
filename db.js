@@ -9,7 +9,7 @@ const STORAGE_KEYS = {
   EXTRA_CHARGES: 'anshu_coaching_extra_charges_v2'
 };
 
-// Initial Seed Data spanning Class 1 to Class 10
+// Initial Seed Data (Only loaded once on very first launch!)
 const INITIAL_STUDENTS = [
   {
     id: 1,
@@ -110,7 +110,6 @@ const INITIAL_STUDENTS = [
 ];
 
 const INITIAL_PAYMENTS = [
-  // Aarav Sharma (May: Paid ₹250 of ₹300 -> Arrears ₹50. June: Unpaid. July: Unpaid)
   {
     id: 101,
     student_id: 1,
@@ -122,7 +121,6 @@ const INITIAL_PAYMENTS = [
     payment_mode: 'Cash',
     payment_date: '2026-05-12T10:00:00Z'
   },
-  // Ananya Patel (Paid in full)
   {
     id: 102,
     student_id: 2,
@@ -167,15 +165,6 @@ const INITIAL_EXTRA_CHARGES = [
     date: '2026-05-15',
     status: 'Paid',
     paid_with_fee: true
-  },
-  {
-    id: 202,
-    student_id: 3,
-    title: 'Science Exam Fee',
-    amount: 100,
-    date: '2026-06-01',
-    status: 'Pending',
-    paid_with_fee: false
   }
 ];
 
@@ -190,6 +179,7 @@ class DBService {
   }
 
   init() {
+    // Only load initial seed data if localStorage is completely empty!
     if (!localStorage.getItem(STORAGE_KEYS.STUDENTS)) {
       this.resetToDefaults();
     }
@@ -223,6 +213,31 @@ class DBService {
     students.push(newStudent);
     localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(students));
     return newStudent;
+  }
+
+  updateStudent(id, updatedFields) {
+    const students = this.getStudents();
+    const index = students.findIndex(s => s.id === Number(id));
+    if (index !== -1) {
+      students[index] = { ...students[index], ...updatedFields };
+      if (updatedFields.monthly_fee) students[index].monthly_fee = Number(updatedFields.monthly_fee);
+      localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(students));
+      return students[index];
+    }
+    return null;
+  }
+
+  deleteStudent(id) {
+    let students = this.getStudents();
+    students = students.filter(s => s.id !== Number(id));
+    localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(students));
+
+    // Also remove associated payments
+    let payments = this.getPayments();
+    payments = payments.filter(p => p.student_id !== Number(id));
+    localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(payments));
+
+    return true;
   }
 
   // --- Payments CRUD ---
