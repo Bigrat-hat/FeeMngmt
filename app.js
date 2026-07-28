@@ -18,10 +18,22 @@ document.addEventListener('DOMContentLoaded', () => {
   initPWA();
 });
 
+// Auto-Update PWA Service Worker Handler
 function initPWA() {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-      .catch(err => console.log('PWA ServiceWorker registration notice:', err));
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+      // Check for updates on load
+      reg.update();
+    }).catch(err => console.log('PWA ServiceWorker registration notice:', err));
+
+    // Auto-Reload when a new code update is deployed!
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload(); // Automatically updates to latest code!
+      }
+    });
   }
 }
 
@@ -267,7 +279,7 @@ function initDashboardCharts() {
   });
 }
 
-// --- 2. Students Directory View (Active, Left & Session Closed) ---
+// --- 2. Students Directory View ---
 function renderStudentsView(students) {
   let filtered = students;
   if (searchQuery) {
@@ -543,7 +555,6 @@ function renderActiveModal() {
               </div>
             </div>
 
-            <!-- Lifecycle Status Picker -->
             <div class="form-group">
               <label class="form-label">Enrollment Lifecycle Status</label>
               <select name="status" class="form-control">
@@ -553,7 +564,6 @@ function renderActiveModal() {
               </select>
             </div>
 
-            <!-- Optional School Name & Board -->
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
               <div class="form-group">
                 <label class="form-label">School Name (Optional)</label>
@@ -578,7 +588,7 @@ function renderActiveModal() {
     `;
   } 
 
-  // Modal 2: Edit Student Modal (Including Status: Active / Left / Session Closed)
+  // Modal 2: Edit Student Modal
   else if (activeModal === 'edit-student' && editStudentId) {
     const student = db.getStudentById(editStudentId);
     if (!student) return;
@@ -627,7 +637,6 @@ function renderActiveModal() {
               </div>
             </div>
 
-            <!-- Enrollment Lifecycle Status -->
             <div class="form-group">
               <label class="form-label">Enrollment Status</label>
               <select name="status" class="form-control">
@@ -637,7 +646,6 @@ function renderActiveModal() {
               </select>
             </div>
 
-            <!-- Optional School & Board -->
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
               <div class="form-group">
                 <label class="form-label">School Name (Optional)</label>
