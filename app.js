@@ -12,6 +12,10 @@ let selectedBoardForList = null;
 let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'board-list', 'calendar-day', 'receipt'
 let receiptData = null;
 
+// Interactive Calendar Month & Year Navigation State (Defaults to current live month & year!)
+let calendarViewYear = new Date().getFullYear();
+let calendarViewMonthIdx = new Date().getMonth();
+
 // Track last rendered day number for real-time midnight auto-update
 let lastRenderedDayNumber = new Date().getDate();
 
@@ -24,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMidnightRealtimeClock();
 });
 
-// Real-Time Midnight Auto-Update Clock (Auto-advances calendar highlight at 12:00 AM midnight)
+// Real-Time Midnight Auto-Update Clock
 function initMidnightRealtimeClock() {
   setInterval(() => {
     const currentDayNumber = new Date().getDate();
@@ -32,7 +36,7 @@ function initMidnightRealtimeClock() {
       lastRenderedDayNumber = currentDayNumber;
       renderCurrentTab(); // Auto-refresh today's highlight & metrics at midnight!
     }
-  }, 15000); // Checks every 15 seconds
+  }, 15000);
 }
 
 // PWA Back Button Lock
@@ -201,6 +205,22 @@ window.openModal = function(modalName, payload = null) {
   }
   if (modalName === 'board-list' && payload) {
     selectedBoardForList = payload;
+  }
+  if (modalName === 'receipt' && payload) {
+    if (typeof payload === 'object') {
+      receiptData = payload;
+    } else {
+      const p = db.getPaymentById(payload);
+      if (p) {
+        const s = db.getStudentById(p.student_id);
+        receiptData = {
+          payment: p,
+          student: s || { name: 'Student', class: '' },
+          totalPayable: p.paid_amount + p.remaining_amount,
+          remainingArrears: p.remaining_amount
+        };
+      }
+    }
   }
   renderActiveModal();
 };
@@ -438,7 +458,7 @@ function renderStatusBadge(status, dueAmount) {
   }
 }
 
-// --- 3. Collect Fees View ---
+// --- 3. Collect Fees View + Recent Receipts Log ---
 function renderCollectFeesView(students) {
   const activeStudents = students.filter(s => s.status === 'Active' || (s.status === 'Left' && db.calculateStudentFinancials(s.id).totalCurrentDue > 0));
   const selectedStudent = selectedStudentForCollect ? db.getStudentById(selectedStudentForCollect) : activeStudents[0];
@@ -447,6 +467,8 @@ function renderCollectFeesView(students) {
   const now = new Date();
   const currentMonthName = MONTH_NAMES[now.getMonth()];
   const currentYear = now.getFullYear();
+
+  const recentPayments = db.getRecentPayments(6);
 
   return `
     <div class="glass-card">
@@ -517,6 +539,27 @@ function renderCollectFeesView(students) {
         </form>
       ` : ''}
     </div>
+
+    <!-- Recent Payment Receipts Log Section -->
+    <div class="glass-card">
+      <h3 style="font-size:13px; font-weight:800; color:var(--emerald-950); margin-bottom:8px;">Recent Payment Receipts 🧾</h3>
+      <div style="max-height:220px; overflow-y:auto;">
+        ${recentPayments.length > 0 ? recentPayments.map(p => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:12px; margin-bottom:6px; font-size:11px;">
+            <div>
+              <strong style="color:var(--emerald-950);">${p.student.name}</strong> (${p.student.class})
+              <div style="font-size:9px; color:var(--emerald-600);">${p.month} ${p.year} • ${db.formatDisplayDate(p.payment_date)} (${p.payment_mode})</div>
+            </div>
+            <div style="text-align:right; display:flex; align-items:center; gap:8px;">
+              <strong style="color:#254B33; font-size:12px;">₹${p.paid_amount}</strong>
+              <button class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="openModal('receipt', ${p.id})">🧾 Receipt</button>
+            </div>
+          </div>
+        `).join('') : `
+          <div style="text-align:center; padding:15px; color:var(--emerald-600); font-size:11px;">No payments recorded yet.</div>
+        `}
+      </div>
+    </div>
   `;
 }
 
@@ -536,7 +579,17 @@ window.handleFeeCollection = function(event) {
 
   const fin = db.calculateStudentFinancials(studentId);
   const totalPayable = fin.totalCurrentDue;
-  const remaining = Math.max(0, totalPayable - paidAmount);
+
+  let remaining = 0;
+  let advance = 0;
+
+  if (paidAmount >= totalPayable) {
+    advance = paidAmount - totalPayable;
+    remaining = 0;
+  } else {
+    remaining = totalPayable - paidAmount;
+    advance = 0;
+  }
 
   const payment = db.recordPayment({
     student_id: studentId,
@@ -545,6 +598,7 @@ window.handleFeeCollection = function(event) {
     monthly_fee: fin.student.monthly_fee,
     paid_amount: paidAmount,
     remaining_amount: remaining,
+    advance_amount: advance,
     payment_mode: paymentMode,
     payment_date: new Date().toISOString()
   });
@@ -553,23 +607,52 @@ window.handleFeeCollection = function(event) {
     payment,
     student: fin.student,
     totalPayable,
-    remainingArrears: remaining
+    remainingArrears: remaining,
+    advanceCredit: advance
   };
 
   openModal('receipt');
 };
 
-// --- 4. REAL-TIME LIVE FEE CALENDAR VIEW ---
+// --- 4. INTERACTIVE SWITCHABLE MONTH CALENDAR + DUAL PANELS ---
 function renderCalendarView(students) {
-  const now = new Date();
-  const currentMonthName = MONTH_NAMES[now.getMonth()];
-  const currentYear = now.getFullYear();
+  const currentMonthName = MONTH_NAMES[calendarViewMonthIdx];
+  const isCurrentLiveMonth = (calendarViewYear === new Date().getFullYear() && calendarViewMonthIdx === new Date().getMonth());
+
+  // Filter students joining or paying on selected day/month for the dual panels below
+  const selectedDay = selectedCalendarDay || (isCurrentLiveMonth ? new Date().getDate() : 1);
+  
+  // Panel 1: Students Joining Anniversary Record
+  const joiningStudents = students.filter(s => {
+    const d = new Date(s.joining_date);
+    return d.getDate() === selectedDay;
+  });
+
+  // Panel 2: Daily Fee Activity Log
+  const allPayments = db.getPayments();
+  const studentMap = {};
+  students.forEach(s => { studentMap[s.id] = s; });
+
+  const dailyPayments = allPayments.filter(p => {
+    const pDate = new Date(p.payment_date || p.created_at);
+    return (pDate.getFullYear() === calendarViewYear && pDate.getMonth() === calendarViewMonthIdx && pDate.getDate() === selectedDay);
+  }).map(p => ({
+    ...p,
+    student: studentMap[p.student_id] || { name: 'Student', class: '' }
+  }));
 
   return `
     <div class="glass-card">
+      <!-- Calendar Navigation Bar -->
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <h3 style="font-size:15px; font-weight:800; color:var(--emerald-950);">${currentMonthName} ${currentYear} Fee Calendar</h3>
-        <span style="font-size:10px; color:var(--emerald-600); font-weight:700;">💡 Tap date to view dues</span>
+        <button class="btn-secondary" style="padding:4px 10px; font-size:11px;" onclick="navigateCalendarMonth(-1)">◀ Prev</button>
+        <div style="text-align:center;">
+          <h3 style="font-size:15px; font-weight:800; color:var(--emerald-950); display:flex; align-items:center; justify-content:center; gap:6px;">
+            ${currentMonthName} ${calendarViewYear}
+            ${!isCurrentLiveMonth ? `<button class="btn-secondary" style="padding:2px 6px; font-size:9px;" onclick="resetCalendarToToday()">📅 Today</button>` : ''}
+          </h3>
+        </div>
+        <button class="btn-secondary" style="padding:4px 10px; font-size:11px;" onclick="navigateCalendarMonth(1)">Next ▶</button>
       </div>
 
       <div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:4px; font-size:10px; font-weight:800; color:var(--emerald-600); text-align:center; margin-bottom:8px;">
@@ -579,17 +662,86 @@ function renderCalendarView(students) {
         ${renderCalendarGridDays(students)}
       </div>
     </div>
+
+    <!-- DUAL PANELS BELOW CALENDAR -->
+    
+    <!-- PANEL 1: Joining Anniversary Register -->
+    <div class="glass-card" style="margin-bottom:10px;">
+      <h4 style="font-size:12px; font-weight:800; color:var(--emerald-950); margin-bottom:6px; display:flex; justify-space-between; align-items:center;">
+        <span>🎯 Joining Anniversary Register (${currentMonthName} ${selectedDay})</span>
+        <span style="font-size:9px; color:var(--emerald-600);">${joiningStudents.length} Student(s)</span>
+      </h4>
+      <div style="max-height:130px; overflow-y:auto;">
+        ${joiningStudents.length > 0 ? joiningStudents.map(s => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:10px; margin-bottom:4px; font-size:11px;">
+            <div>
+              <strong style="color:var(--emerald-950);">${s.name}</strong> (${s.class})
+              <div style="font-size:9px; color:var(--emerald-600);">Joined: ${s.joining_date} • Baseline Fee: ₹${s.monthly_fee}</div>
+            </div>
+            <button class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="openModal('student-profile', ${s.id})">Profile</button>
+          </div>
+        `).join('') : `
+          <div style="text-align:center; padding:10px; color:var(--emerald-600); font-size:10px;">No student joining anniversary on the ${selectedDay}th.</div>
+        `}
+      </div>
+    </div>
+
+    <!-- PANEL 2: Daily Fee Collection Register Log -->
+    <div class="glass-card">
+      <h4 style="font-size:12px; font-weight:800; color:var(--emerald-950); margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+        <span>💵 Fee Collection Register Log (${currentMonthName} ${selectedDay})</span>
+        <span style="font-size:9px; color:var(--emerald-600);">${dailyPayments.length} Payment(s)</span>
+      </h4>
+      <div style="max-height:140px; overflow-y:auto;">
+        ${dailyPayments.length > 0 ? dailyPayments.map(p => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:10px; margin-bottom:4px; font-size:11px;">
+            <div>
+              <strong style="color:var(--emerald-950);">${p.student.name}</strong> (${p.student.class})
+              <div style="font-size:9px; color:var(--emerald-600);">${p.month} ${p.year} • Mode: ${p.payment_mode}</div>
+            </div>
+            <div style="text-align:right; display:flex; align-items:center; gap:6px;">
+              <strong style="color:#254B33; font-size:12px;">₹${p.paid_amount}</strong>
+              <button class="btn-secondary" style="padding:3px 7px; font-size:9px;" onclick="openModal('receipt', ${p.id})">🧾 Receipt</button>
+            </div>
+          </div>
+        `).join('') : `
+          <div style="text-align:center; padding:10px; color:var(--emerald-600); font-size:10px;">No fee collection transactions recorded on this date.</div>
+        `}
+      </div>
+    </div>
   `;
 }
 
+window.navigateCalendarMonth = function(delta) {
+  calendarViewMonthIdx += delta;
+  if (calendarViewMonthIdx > 11) {
+    calendarViewMonthIdx = 0;
+    calendarViewYear++;
+  } else if (calendarViewMonthIdx < 0) {
+    calendarViewMonthIdx = 11;
+    calendarViewYear--;
+  }
+  renderCurrentTab();
+};
+
+window.resetCalendarToToday = function() {
+  const now = new Date();
+  calendarViewYear = now.getFullYear();
+  calendarViewMonthIdx = now.getMonth();
+  selectedCalendarDay = now.getDate();
+  renderCurrentTab();
+};
+
 function renderCalendarGridDays(students) {
   const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonthIdx = now.getMonth();
+  const currentLiveYear = now.getFullYear();
+  const currentLiveMonthIdx = now.getMonth();
   const todayDateNumber = now.getDate();
 
-  const firstDayOfWeek = new Date(currentYear, currentMonthIdx, 1).getDay();
-  const totalDaysInMonth = new Date(currentYear, currentMonthIdx + 1, 0).getDate();
+  const isLiveView = (calendarViewYear === currentLiveYear && calendarViewMonthIdx === currentLiveMonthIdx);
+
+  const firstDayOfWeek = new Date(calendarViewYear, calendarViewMonthIdx, 1).getDay();
+  const totalDaysInMonth = new Date(calendarViewYear, calendarViewMonthIdx + 1, 0).getDate();
 
   let gridHTML = '';
   for (let i = 0; i < firstDayOfWeek; i++) {
@@ -597,12 +749,13 @@ function renderCalendarGridDays(students) {
   }
 
   for (let day = 1; day <= totalDaysInMonth; day++) {
-    const isToday = (day === todayDateNumber);
+    const isToday = isLiveView && (day === todayDateNumber);
+    const isSelectedDay = (selectedCalendarDay === day);
     const dueStudents = students.filter(s => s.status === 'Active' && new Date(s.joining_date).getDate() === day);
     const hasDue = dueStudents.length > 0;
 
     gridHTML += `
-      <div class="clickable-card" onclick="openModal('calendar-day', ${day})" style="height:38px; background:${isToday ? 'var(--emerald-800)' : hasDue ? 'var(--emerald-200)' : '#FFFFFF'}; color:${isToday ? 'white' : 'var(--emerald-950)'}; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; font-weight:700; border:${isToday ? '2px solid var(--emerald-950)' : '1px solid rgba(94, 145, 133, 0.15)'}; box-shadow:${isToday ? '0 4px 12px rgba(37,75,51,0.3)' : 'none'};">
+      <div class="clickable-card" onclick="onCalendarDaySelect(${day})" style="height:38px; background:${isToday ? 'var(--emerald-800)' : isSelectedDay ? 'var(--emerald-400)' : hasDue ? 'var(--emerald-200)' : '#FFFFFF'}; color:${isToday ? 'white' : 'var(--emerald-950)'}; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; font-weight:700; border:${isToday ? '2px solid var(--emerald-950)' : isSelectedDay ? '2px solid var(--emerald-800)' : '1px solid rgba(94, 145, 133, 0.15)'}; box-shadow:${isToday || isSelectedDay ? '0 4px 12px rgba(37,75,51,0.3)' : 'none'};">
         <span>${day}</span>
         ${hasDue ? `<span style="width:4px; height:4px; background:${isToday ? '#B5D8C7' : '#254B33'}; border-radius:50%; margin-top:2px;"></span>` : ''}
       </div>
@@ -610,6 +763,11 @@ function renderCalendarGridDays(students) {
   }
   return gridHTML;
 }
+
+window.onCalendarDaySelect = function(day) {
+  selectedCalendarDay = day;
+  renderCurrentTab();
+};
 
 // --- Modal & Bottom Sheet Renderer ---
 function renderActiveModal() {
@@ -829,12 +987,13 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 4: Student Profile Drawer
+  // Modal 4: Student Profile Drawer (With Advance Balance & Receipt History Audit!)
   else if (activeModal === 'student-profile' && profileStudentId) {
     const fin = db.calculateStudentFinancials(profileStudentId);
     if (!fin) return;
     const avatar = fin.student.gender === 'Female' ? '👧' : '👦';
     const isLeft = fin.student.status === 'Left';
+    const studentPayments = db.getPaymentsByStudent(profileStudentId);
 
     container.innerHTML = `
       <div class="modal-overlay" onclick="closeModal()">
@@ -865,25 +1024,48 @@ function renderActiveModal() {
               </div>
               <div style="font-size:20px; font-weight:800; color:${fin.totalCurrentDue === 0 ? '#254B33' : 'var(--status-overdue-text)'};">₹${fin.totalCurrentDue}</div>
             </div>
+
+            ${fin.advanceBalance > 0 ? `
+              <div style="margin-top:6px; padding:4px 8px; background:rgba(37,75,51,0.12); border:1px solid rgba(37,75,51,0.3); border-radius:8px; font-size:10px; color:#254B33; font-weight:800; display:flex; justify-content:space-between;">
+                <span>✨ Advance Credit Balance:</span>
+                <span>₹${fin.advanceBalance}</span>
+              </div>
+            ` : ''}
           </div>
 
-          <h4 style="font-size:11px; font-weight:800; color:var(--emerald-800); margin-bottom:6px;">Month-by-Month Payment Audit</h4>
-          
-          <div style="max-height:190px; overflow-y:auto; margin-bottom:12px;">
+          <!-- Section A: Month-by-Month Baseline Audit -->
+          <h4 style="font-size:11px; font-weight:800; color:var(--emerald-800); margin-bottom:6px;">Month-by-Month Baseline Status</h4>
+          <div style="max-height:120px; overflow-y:auto; margin-bottom:12px;">
             ${fin.billingMonths.map(bm => `
               <div class="month-pending-row">
                 <div>
                   <strong>${bm.monthName} ${bm.year}</strong>
-                  <div style="font-size:9px; color:var(--emerald-600);">Baseline Fee: ₹${bm.baseFee}</div>
+                  <div style="font-size:9px; color:var(--emerald-600);">Fee: ₹${bm.baseFee}</div>
                 </div>
                 <div>
                   ${bm.isPaid ? 
-                    `<span class="badge badge-paid">✓ PAID (₹${bm.baseFee}) ${bm.paymentDate ? '• ' + bm.paymentDate + ' (' + bm.paymentMode + ')' : ''}</span>` : 
+                    `<span class="badge badge-paid">✓ PAID</span>` : 
                     `<span class="badge badge-overdue">🔴 PENDING ₹${bm.remainingBalance}</span>`
                   }
                 </div>
               </div>
             `).join('')}
+          </div>
+
+          <!-- Section B: Payment Transaction & Digital Receipt History -->
+          <h4 style="font-size:11px; font-weight:800; color:var(--emerald-800); margin-bottom:6px;">Payment Receipts & Transaction Log 🧾</h4>
+          <div style="max-height:130px; overflow-y:auto; margin-bottom:12px;">
+            ${studentPayments.length > 0 ? studentPayments.map(p => `
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:10px; margin-bottom:4px; font-size:10px;">
+                <div>
+                  <strong style="color:var(--emerald-950);">₹${p.paid_amount} Paid</strong> (${p.payment_mode})
+                  <div style="font-size:9px; color:var(--emerald-600);">${p.month} ${p.year} • Date: ${db.formatDisplayDate(p.payment_date)}</div>
+                </div>
+                <button class="btn-secondary" style="padding:3px 7px; font-size:9px;" onclick="openModal('receipt', ${p.id})">🧾 View Receipt</button>
+              </div>
+            `).join('') : `
+              <div style="text-align:center; padding:10px; color:var(--emerald-600); font-size:10px;">No transaction receipts logged yet.</div>
+            `}
           </div>
 
           <div style="display:flex; gap:8px;">
@@ -903,16 +1085,14 @@ function renderActiveModal() {
   else if (activeModal === 'calendar-day' && selectedCalendarDay) {
     const students = db.getStudents();
     const dueStudents = students.filter(s => s.status === 'Active' && new Date(s.joining_date).getDate() === selectedCalendarDay);
-    const now = new Date();
-    const currentMonthName = MONTH_NAMES[now.getMonth()];
-    const currentYear = now.getFullYear();
+    const currentMonthName = MONTH_NAMES[calendarViewMonthIdx];
 
     container.innerHTML = `
       <div class="modal-overlay" onclick="closeModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
           <div class="modal-header">
             <div>
-              <h3 class="modal-title">${currentMonthName} ${selectedCalendarDay}, ${currentYear} - Dues Timeline</h3>
+              <h3 class="modal-title">${currentMonthName} ${selectedCalendarDay}, ${calendarViewYear} - Dues Timeline</h3>
               <div style="font-size:10px; color:var(--emerald-600); font-weight:700;">
                 ${dueStudents.length} Student(s) with monthly fee baseline on the ${selectedCalendarDay}th
               </div>
@@ -993,7 +1173,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 7: Receipt Sheet
+  // Modal 7: Digital Receipt Sheet
   else if (activeModal === 'receipt' && receiptData) {
     container.innerHTML = `
       <div class="modal-overlay" onclick="closeModal()">
@@ -1005,7 +1185,7 @@ function renderActiveModal() {
           <div style="border:1px dashed var(--emerald-600); border-radius:14px; padding:14px; font-size:11px;">
             <div style="text-align:center; font-weight:800; font-size:13px; margin-bottom:8px; color:var(--emerald-950);">ANSHU COACHING CLASSES</div>
             <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-              <span>Student:</span><strong>${receiptData.student.name}</strong>
+              <span>Student:</span><strong>${receiptData.student.name} (${receiptData.student.class || ''})</strong>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
               <span>Period:</span><strong>${receiptData.payment.month} ${receiptData.payment.year}</strong>
@@ -1017,8 +1197,13 @@ function renderActiveModal() {
               <span>Paid Amount:</span><strong style="font-size:13px; color:#254B33;">₹${receiptData.payment.paid_amount}</strong>
             </div>
             <div style="display:flex; justify-content:space-between;">
-              <span>Remaining Arrears:</span><strong>₹${receiptData.remainingArrears}</strong>
+              <span>Remaining Balance:</span><strong>₹${receiptData.remainingArrears || 0}</strong>
             </div>
+            ${receiptData.advanceCredit > 0 ? `
+              <div style="display:flex; justify-content:space-between; margin-top:4px; color:#254B33;">
+                <span>Advance Credit Added:</span><strong>₹${receiptData.advanceCredit}</strong>
+              </div>
+            ` : ''}
           </div>
           <button class="btn-primary" style="width:100%; margin-top:12px;" onclick="closeModal()">Done</button>
         </div>
