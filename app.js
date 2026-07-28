@@ -5,12 +5,21 @@ let isLoggedIn = localStorage.getItem('anshu_admin_logged_in') === 'true';
 let currentTab = 'dashboard';
 let searchQuery = '';
 let selectedStudentForCollect = null;
+let selectedCollectMonth = MONTH_NAMES[new Date().getMonth()];
+let selectedCollectYear = new Date().getFullYear();
+
 let profileStudentId = null;
 let editStudentId = null;
 let selectedCalendarDay = new Date().getDate(); // Defaults to live Today!
 let selectedBoardForList = null;
-let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'board-list', 'calendar-day', 'receipt', 'add-khata', 'backup-restore', 'clear-khata-modal', 'custom-alert-modal'
+let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'board-list', 'calendar-day', 'receipt', 'add-khata', 'backup-restore', 'clear-khata-modal', 'custom-alert-modal', 'select-student-picker', 'select-month-picker'
 let receiptData = null;
+
+// Temporary Form State for Chip Toggles
+let formGenderState = 'Male';
+let formClassState = 'Class 10';
+let formBoardState = 'CBSE';
+let formStatusState = 'Active';
 
 // Custom In-App Modal State (Replaces all browser native alerts/confirms!)
 let activeKhataItemToClear = null; // { chargeId, item_name, amount, student_name }
@@ -27,11 +36,24 @@ let lastRenderedDayNumber = new Date().getDate();
 document.addEventListener('DOMContentLoaded', () => {
   initSplashScreenHandler();
   initHistoryLock();
+  updateHeaderLiveDate();
   renderCurrentTab();
   updateNavActiveState();
   initPWA();
   initMidnightRealtimeClock();
 });
+
+// Live Date Header Badge Update Function (Updates daily at 12 midnight!)
+function updateHeaderLiveDate() {
+  const badgeEl = document.getElementById('liveHeaderDateBadge');
+  if (badgeEl) {
+    const now = new Date();
+    const day = now.getDate();
+    const monthShort = MONTH_NAMES[now.getMonth()].substring(0, 3);
+    const year = now.getFullYear();
+    badgeEl.innerHTML = `📅 ${day} ${monthShort} ${year}`;
+  }
+}
 
 // Ultra Premium Splash Screen Auto-Dismiss Transition Handler
 function initSplashScreenHandler() {
@@ -66,13 +88,14 @@ window.showAppConfirm = function(title, message, onConfirmCallback) {
   openModal('custom-alert-modal');
 };
 
-// Real-Time Midnight Auto-Update Clock
+// Real-Time Midnight Auto-Update Clock (Runs every 15s to check 12:00 midnight rollover)
 function initMidnightRealtimeClock() {
   setInterval(() => {
     const currentDayNumber = new Date().getDate();
     if (currentDayNumber !== lastRenderedDayNumber) {
       lastRenderedDayNumber = currentDayNumber;
       selectedCalendarDay = currentDayNumber;
+      updateHeaderLiveDate();
       renderCurrentTab(); // Auto-refresh today's highlight & metrics at midnight!
     }
   }, 15000);
@@ -141,6 +164,7 @@ function renderCurrentTab() {
 
   if (navEl) navEl.style.display = 'flex';
   if (headerEl) headerEl.style.display = 'flex';
+  updateHeaderLiveDate();
 
   const metrics = db.getDashboardMetrics();
   const students = db.getStudents();
@@ -244,6 +268,19 @@ window.openModal = function(modalName, payload = null) {
   }
   if (modalName === 'edit-student' && payload) {
     editStudentId = payload;
+    const s = db.getStudentById(payload);
+    if (s) {
+      formGenderState = s.gender || 'Male';
+      formClassState = s.class || 'Class 10';
+      formBoardState = s.board || 'CBSE';
+      formStatusState = s.status || 'Active';
+    }
+  }
+  if (modalName === 'add-student') {
+    formGenderState = 'Male';
+    formClassState = 'Class 10';
+    formBoardState = 'CBSE';
+    formStatusState = 'Active';
   }
   if (modalName === 'calendar-day' && payload) {
     selectedCalendarDay = payload;
@@ -527,15 +564,11 @@ function renderStatusBadge(status, dueAmount, renewalDateStr) {
   }
 }
 
-// --- 3. Collect Fees View ---
+// --- 3. Collect Fees View (With Custom In-App Pickers!) ---
 function renderCollectFeesView(students) {
   const activeStudents = students.filter(s => s.status === 'Active' || (s.status === 'Left' && db.calculateStudentFinancials(s.id).totalCurrentDue > 0));
   const selectedStudent = selectedStudentForCollect ? db.getStudentById(selectedStudentForCollect) : activeStudents[0];
   const fin = selectedStudent ? db.calculateStudentFinancials(selectedStudent.id) : null;
-
-  const now = new Date();
-  const currentMonthName = MONTH_NAMES[now.getMonth()];
-  const currentYear = now.getFullYear();
 
   // ALWAYS GET RECENT PAYMENTS NEWEST-FIRST AT TOP!
   const recentPayments = db.getRecentPayments(6);
@@ -544,15 +577,19 @@ function renderCollectFeesView(students) {
     <div class="glass-card">
       <h3 style="font-size:15px; font-weight:800; color:var(--emerald-950); margin-bottom:10px;">Fee Collection Wizard</h3>
 
+      <!-- Custom In-App Student Picker Trigger Button -->
       <div class="form-group">
-        <label class="form-label">Select Student</label>
-        <select class="form-control" onchange="onStudentSelectForCollect(this.value)">
-          ${activeStudents.map(s => `
-            <option value="${s.id}" ${selectedStudent && selectedStudent.id === s.id ? 'selected' : ''}>
-              ${s.name} (${s.class}) ${s.status === 'Left' ? '[LEFT - Unpaid Dues]' : ''}
-            </option>
-          `).join('')}
-        </select>
+        <label class="form-label">Select Student *</label>
+        <div class="custom-select-trigger" onclick="openModal('select-student-picker')">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="student-avatar" style="width:28px; height:28px; font-size:14px;">${selectedStudent && selectedStudent.gender === 'Female' ? '👧' : '👦'}</span>
+            <div>
+              <strong style="font-size:12px; color:var(--emerald-950);">${selectedStudent ? selectedStudent.name : 'Select Student'}</strong>
+              <span style="font-size:10px; color:var(--emerald-600);">${selectedStudent ? ' (' + selectedStudent.class + ')' : ''}</span>
+            </div>
+          </div>
+          <span style="font-size:10px; color:var(--emerald-600); font-weight:800;">Tap to Change 🔽</span>
+        </div>
       </div>
 
       ${fin ? `
@@ -576,23 +613,25 @@ function renderCollectFeesView(students) {
         <form onsubmit="handleFeeCollection(event)">
           <input type="hidden" name="student_id" value="${selectedStudent.id}" />
 
+          <!-- Custom In-App Month & Year Picker Trigger Button -->
           <div class="form-group">
-            <label class="form-label">Month & Year</label>
+            <label class="form-label">Receipt Month & Year *</label>
             <div style="display:flex; gap:8px;">
-              <select name="month" class="form-control" style="flex:2;">
-                ${MONTH_NAMES.map(m => `<option value="${m}" ${m === currentMonthName ? 'selected' : ''}>${m}</option>`).join('')}
-              </select>
-              <input type="number" name="year" class="form-control" value="${currentYear}" style="flex:1;" />
+              <div class="custom-select-trigger" style="flex:2;" onclick="openModal('select-month-picker')">
+                <strong style="font-size:12px; color:var(--emerald-950);">${selectedCollectMonth} ${selectedCollectYear}</strong>
+                <span style="font-size:10px; color:var(--emerald-600); font-weight:800;">📅 Month 🔽</span>
+              </div>
+              <input type="number" id="collectYearInput" name="year" class="form-control" value="${selectedCollectYear}" style="flex:1;" onchange="selectedCollectYear = Number(this.value);" />
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Paying Fee Amount (₹)</label>
+            <label class="form-label">Paying Fee Amount (₹) *</label>
             <input type="number" name="paid_amount" class="form-control" value="${fin.totalCurrentDue > 0 ? fin.totalCurrentDue : fin.student.monthly_fee}" min="0" required />
           </div>
 
           <div class="form-group">
-            <label class="form-label">Payment Mode</label>
+            <label class="form-label">Payment Mode *</label>
             <div style="display:flex; gap:16px; margin-top:2px;">
               <label style="font-size:11px; font-weight:600; cursor:pointer;">
                 <input type="radio" name="payment_mode" value="Cash" checked /> Cash 💵
@@ -646,8 +685,8 @@ window.handleFeeCollection = function(event) {
   event.preventDefault();
   const form = event.target;
   const studentId = form.student_id.value;
-  const month = form.month.value;
-  const year = form.year.value;
+  const month = selectedCollectMonth;
+  const year = selectedCollectYear;
   const paidAmount = Number(form.paid_amount.value || 0);
   const paymentMode = form.payment_mode.value;
 
@@ -910,6 +949,65 @@ function renderActiveModal() {
     `;
   }
 
+  // Modal: Custom In-App Student Picker Sheet (Replaces native <select>!)
+  else if (activeModal === 'select-student-picker') {
+    const students = db.getStudents().filter(s => s.status === 'Active' || (s.status === 'Left' && db.calculateStudentFinancials(s.id).totalCurrentDue > 0));
+
+    container.innerHTML = `
+      <div class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+          <div class="modal-header">
+            <h3 class="modal-title">Select Student for Fee Collection</h3>
+            <button class="close-btn" onclick="closeModal()">✕</button>
+          </div>
+
+          <div style="max-height:300px; overflow-y:auto; margin-bottom:10px;">
+            ${students.map(s => {
+              const fin = db.calculateStudentFinancials(s.id);
+              const isSelected = selectedStudentForCollect === s.id;
+              return `
+                <div class="student-card-item" onclick="onStudentSelectForCollect(${s.id}); closeModal();" style="${isSelected ? 'border:2px solid var(--emerald-800); background:var(--emerald-50);' : ''}">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="student-avatar">${s.gender === 'Female' ? '👧' : '👦'}</span>
+                    <div>
+                      <strong style="font-size:12px; color:var(--emerald-950);">${s.name}</strong>
+                      <div style="font-size:10px; color:var(--emerald-600);">${s.class} • Fee: ₹${s.monthly_fee}</div>
+                    </div>
+                  </div>
+                  <div style="text-align:right;">
+                    ${renderStatusBadge(fin.dueStatus, fin.totalCurrentDue, fin.cycleNextRenewal)}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Modal: Custom In-App Month Picker Sheet (Replaces native <select>!)
+  else if (activeModal === 'select-month-picker') {
+    container.innerHTML = `
+      <div class="modal-overlay" onclick="closeModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+          <div class="modal-header">
+            <h3 class="modal-title">Select Receipt Month</h3>
+            <button class="close-btn" onclick="closeModal()">✕</button>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:12px;">
+            ${MONTH_NAMES.map(m => `
+              <button class="chip-btn ${selectedCollectMonth === m ? 'active' : ''}" style="padding:10px 4px; text-align:center;" onclick="selectedCollectMonth = '${m}'; closeModal(); renderCurrentTab();">
+                ${m}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   // Modal: Clear Khata Item Selection Sheet (Payment Mode Selection inside App!)
   else if (activeModal === 'clear-khata-modal' && activeKhataItemToClear) {
     container.innerHTML = `
@@ -959,7 +1057,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 1: Add Student
+  // Modal 1: Add Student (Custom In-App Chip Selectors!)
   else if (activeModal === 'add-student') {
     const todayDateStr = new Date().toISOString().split('T')[0];
 
@@ -976,19 +1074,20 @@ function renderActiveModal() {
               <input type="text" name="name" class="form-control" required placeholder="e.g. Aarav Sharma" />
             </div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-              <div class="form-group">
-                <label class="form-label">Gender *</label>
-                <select name="gender" class="form-control" required>
-                  <option value="Male">Male 👦</option>
-                  <option value="Female">Female 👧</option>
-                </select>
+            <div class="form-group">
+              <label class="form-label">Gender *</label>
+              <div class="chip-group">
+                <button type="button" class="chip-btn ${formGenderState === 'Male' ? 'active' : ''}" onclick="formGenderState='Male'; openModal('add-student');">Male 👦</button>
+                <button type="button" class="chip-btn ${formGenderState === 'Female' ? 'active' : ''}" onclick="formGenderState='Female'; openModal('add-student');">Female 👧</button>
               </div>
-              <div class="form-group">
-                <label class="form-label">Class (1st to 10th) *</label>
-                <select name="class" class="form-control" required>
-                  ${[1,2,3,4,5,6,7,8,9,10].map(c => `<option value="Class ${c}" ${c===10?'selected':''}>Class ${c}</option>`).join('')}
-                </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Class (1st to 10th) *</label>
+              <div class="chip-group">
+                ${[1,2,3,4,5,6,7,8,9,10].map(c => `
+                  <button type="button" class="chip-btn ${formClassState === 'Class ' + c ? 'active' : ''}" onclick="formClassState='Class ${c}'; openModal('add-student');">Class ${c}</button>
+                `).join('')}
               </div>
             </div>
 
@@ -1004,28 +1103,17 @@ function renderActiveModal() {
             </div>
 
             <div class="form-group">
-              <label class="form-label">Enrollment Lifecycle Status</label>
-              <select name="status" class="form-control">
-                <option value="Active" selected>Active (Currently Enrolled)</option>
-                <option value="Left">Left (Discontinued Coaching)</option>
-                <option value="Session Closed">Session Closed (Completed Year)</option>
-              </select>
+              <label class="form-label">Board *</label>
+              <div class="chip-group">
+                ${['CBSE', 'State Board', 'ICSE', 'Other'].map(b => `
+                  <button type="button" class="chip-btn ${formBoardState === b ? 'active' : ''}" onclick="formBoardState='${b}'; openModal('add-student');">${b === 'State Board' ? 'State / MP Board' : b}</button>
+                `).join('')}
+              </div>
             </div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-              <div class="form-group">
-                <label class="form-label">School Name (Optional)</label>
-                <input type="text" name="school" class="form-control" placeholder="e.g. St. Xavier" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">Board (Optional)</label>
-                <select name="board" class="form-control">
-                  <option value="CBSE">CBSE</option>
-                  <option value="State Board">State / MP Board</option>
-                  <option value="ICSE">ICSE</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
+            <div class="form-group">
+              <label class="form-label">School Name (Optional)</label>
+              <input type="text" name="school" class="form-control" placeholder="e.g. St. Xavier" />
             </div>
 
             <button type="submit" class="btn-primary" style="width:100%; padding:10px; margin-top:8px;">Save Student</button>
@@ -1134,7 +1222,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 4: Edit Student Modal
+  // Modal 4: Edit Student Modal (Custom In-App Chip Selectors!)
   else if (activeModal === 'edit-student' && editStudentId) {
     const student = db.getStudentById(editStudentId);
     if (!student) return;
@@ -1154,21 +1242,20 @@ function renderActiveModal() {
               <input type="text" name="name" class="form-control" required value="${student.name}" />
             </div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-              <div class="form-group">
-                <label class="form-label">Gender *</label>
-                <select name="gender" class="form-control">
-                  <option value="Male" ${student.gender === 'Male' ? 'selected' : ''}>Male 👦</option>
-                  <option value="Female" ${student.gender === 'Female' ? 'selected' : ''}>Female 👧</option>
-                </select>
+            <div class="form-group">
+              <label class="form-label">Gender *</label>
+              <div class="chip-group">
+                <button type="button" class="chip-btn ${formGenderState === 'Male' ? 'active' : ''}" onclick="formGenderState='Male'; openModal('edit-student', ${student.id});">Male 👦</button>
+                <button type="button" class="chip-btn ${formGenderState === 'Female' ? 'active' : ''}" onclick="formGenderState='Female'; openModal('edit-student', ${student.id});">Female 👧</option>
               </div>
-              <div class="form-group">
-                <label class="form-label">Class *</label>
-                <select name="class" class="form-control" required>
-                  ${[1,2,3,4,5,6,7,8,9,10].map(c => `
-                    <option value="Class ${c}" ${student.class === 'Class ' + c ? 'selected' : ''}>Class ${c}</option>
-                  `).join('')}
-                </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Class *</label>
+              <div class="chip-group">
+                ${[1,2,3,4,5,6,7,8,9,10].map(c => `
+                  <button type="button" class="chip-btn ${formClassState === 'Class ' + c ? 'active' : ''}" onclick="formClassState='Class ${c}'; openModal('edit-student', ${student.id});">Class ${c}</button>
+                `).join('')}
               </div>
             </div>
 
@@ -1184,28 +1271,26 @@ function renderActiveModal() {
             </div>
 
             <div class="form-group">
-              <label class="form-label">Enrollment Status</label>
-              <select name="status" class="form-control">
-                <option value="Active" ${student.status === 'Active' ? 'selected' : ''}>Active (Enrolled)</option>
-                <option value="Left" ${student.status === 'Left' ? 'selected' : ''}>Left (Discontinued Coaching)</option>
-                <option value="Session Closed" ${student.status === 'Session Closed' ? 'selected' : ''}>Session Closed (Completed Year)</option>
-              </select>
+              <label class="form-label">Enrollment Status *</label>
+              <div class="chip-group">
+                ${['Active', 'Left', 'Session Closed'].map(st => `
+                  <button type="button" class="chip-btn ${formStatusState === st ? 'active' : ''}" onclick="formStatusState='${st}'; openModal('edit-student', ${student.id});">${st}</button>
+                `).join('')}
+              </div>
             </div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-              <div class="form-group">
-                <label class="form-label">School Name (Optional)</label>
-                <input type="text" name="school" class="form-control" value="${student.school || ''}" />
+            <div class="form-group">
+              <label class="form-label">Board *</label>
+              <div class="chip-group">
+                ${['CBSE', 'State Board', 'ICSE', 'Other'].map(b => `
+                  <button type="button" class="chip-btn ${formBoardState === b ? 'active' : ''}" onclick="formBoardState='${b}'; openModal('edit-student', ${student.id});">${b === 'State Board' ? 'State / MP Board' : b}</button>
+                `).join('')}
               </div>
-              <div class="form-group">
-                <label class="form-label">Board (Optional)</label>
-                <select name="board" class="form-control">
-                  <option value="CBSE" ${student.board === 'CBSE' ? 'selected' : ''}>CBSE</option>
-                  <option value="State Board" ${student.board === 'State Board' ? 'selected' : ''}>State / MP Board</option>
-                  <option value="ICSE" ${student.board === 'ICSE' ? 'selected' : ''}>ICSE</option>
-                  <option value="Other" ${student.board === 'Other' ? 'selected' : ''}>Other</option>
-                </select>
-              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">School Name (Optional)</label>
+              <input type="text" name="school" class="form-control" value="${student.school || ''}" />
             </div>
 
             <div style="display:flex; gap:8px; margin-top:12px;">
@@ -1698,13 +1783,13 @@ window.handleAddStudentSubmit = function(event) {
   const form = event.target;
   db.addStudent({
     name: form.name.value,
-    gender: form.gender.value,
-    class: form.class.value,
+    gender: formGenderState || 'Male',
+    class: formClassState || 'Class 10',
     monthly_fee: form.monthly_fee.value,
     joining_date: form.joining_date.value,
-    status: form.status ? form.status.value : 'Active',
+    status: formStatusState || 'Active',
     school: form.school ? form.school.value : '',
-    board: form.board ? form.board.value : ''
+    board: formBoardState || 'CBSE'
   });
   closeModal();
   renderCurrentTab();
@@ -1715,13 +1800,13 @@ window.handleEditStudentSubmit = function(event) {
   const form = event.target;
   db.updateStudent(form.id.value, {
     name: form.name.value,
-    gender: form.gender.value,
-    class: form.class.value,
+    gender: formGenderState || 'Male',
+    class: formClassState || 'Class 10',
     monthly_fee: form.monthly_fee.value,
     joining_date: form.joining_date.value,
-    status: form.status ? form.status.value : 'Active',
+    status: formStatusState || 'Active',
     school: form.school ? form.school.value : '',
-    board: form.board ? form.board.value : ''
+    board: formBoardState || 'CBSE'
   });
   closeModal();
   renderCurrentTab();

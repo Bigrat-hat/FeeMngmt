@@ -227,7 +227,7 @@ html, body {
   100% { width: 100%; }
 }
 
-/* Fixed Header Bar with Locked Logo Image */
+/* Fixed Header Bar with Locked Logo Image & Live Date Badge */
 .app-header {
   height: 64px;
   min-height: 64px;
@@ -246,7 +246,7 @@ html, body {
 .brand-badge {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-shrink: 0;
 }
 
@@ -264,7 +264,7 @@ html, body {
 }
 
 .brand-title {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
   color: var(--emerald-950);
   line-height: 1.1;
@@ -275,7 +275,68 @@ html, body {
   font-size: 10px;
   color: var(--emerald-600);
   font-weight: 700;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 1px;
+}
+
+.live-date-header-badge {
+  background: var(--emerald-800);
+  color: #FFFFFF;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 8px rgba(37, 75, 51, 0.3);
+}
+
+/* Custom In-App Select Trigger Button */
+.custom-select-trigger {
+  width: 100%;
+  padding: 10px 14px;
+  background: #FFFFFF;
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.custom-select-trigger:active {
+  background: var(--emerald-50);
+  border-color: var(--emerald-800);
+}
+
+/* Custom In-App Chip Select Group */
+.chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.chip-btn {
+  padding: 6px 12px;
+  background: var(--emerald-50);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--emerald-950);
+  cursor: pointer;
+  transition: var(--transition-smooth);
+}
+
+.chip-btn.active {
+  background: var(--emerald-800);
+  color: #FFFFFF;
+  border-color: var(--emerald-800);
+  box-shadow: 0 4px 12px rgba(37, 75, 51, 0.3);
 }
 
 /* Main Scrollable Viewport Container */
