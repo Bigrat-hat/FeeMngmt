@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <!-- Disable Zoom for Native Mobile Experience -->
+  <!-- Instant Disable Zoom & Native Viewport -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Anshu Coaching</title>
-  <meta name="description" content="Anshu Coaching Institute Fees Management Application.">
+  <title>Anshu Coaching Classes</title>
+  <meta name="description" content="Anshu Coaching Classes Fees Management System.">
 
-  <!-- PWA Manifest & Native Standalone App Meta Tags -->
+  <!-- PWA Manifest & Instant Launch Meta Tags -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#263A47">
+  <meta name="theme-color" content="#0F172A">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -28,7 +28,7 @@
   <!-- Chart.js for analytics -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Custom Stylesheet -->
+  <!-- Custom Ultra Premium Stylesheet -->
   <link rel="stylesheet" href="index.css">
 </head>
 <body>
@@ -37,7 +37,7 @@
     <!-- Flexible Adaptable Mobile Viewport -->
     <div class="app-viewport">
 
-      <!-- Header Bar (With + Student & Exit / Logout Button) -->
+      <!-- Header Bar (With + Student & Exit Button) -->
       <header class="app-header">
         <div class="brand-badge">
           <div class="brand-icon">A</div>
@@ -47,15 +47,15 @@
           </div>
         </div>
         <div class="header-actions" style="display:flex; gap:6px;">
-          <button class="btn-secondary" style="padding:5px 10px; font-size:11px;" onclick="openModal('add-student')">+ Student</button>
-          <button class="btn-secondary" style="padding:5px 10px; font-size:11px; color:var(--status-overdue-text); border-color:rgba(239,68,68,0.3);" onclick="handleAdminLogout()">🚪 Exit</button>
+          <button class="btn-secondary" style="padding:6px 12px; font-size:11px;" onclick="openModal('add-student')">+ Student</button>
+          <button class="btn-secondary" style="padding:6px 12px; font-size:11px; color:var(--status-overdue-text); border-color:var(--status-overdue-border);" onclick="handleAdminLogout()">🚪 Exit</button>
         </div>
       </header>
 
       <!-- Scrollable Inner Viewport Container -->
       <main id="tab-content" class="scrollable-content"></main>
 
-      <!-- Centered 4-Tab Fixed Bottom Navigation Bar (No Settings Tab) -->
+      <!-- Centered 4-Tab Fixed Bottom Navigation Bar -->
       <nav class="fixed-bottom-nav">
         <button class="nav-item active" onclick="switchTab('dashboard')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
