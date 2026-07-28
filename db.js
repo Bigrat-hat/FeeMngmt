@@ -32,7 +32,8 @@ class DatabaseEngine {
           status: 'Active',
           school: 'St. Xavier School',
           board: 'CBSE',
-          created_at: '2026-05-10T10:00:00Z'
+          created_at: '2026-05-10T10:00:00Z',
+          updated_at: '2026-05-10T10:00:00Z'
         },
         {
           id: 102,
@@ -44,7 +45,8 @@ class DatabaseEngine {
           status: 'Active',
           school: 'Kendriya Vidyalaya',
           board: 'State Board',
-          created_at: '2026-06-15T10:00:00Z'
+          created_at: '2026-06-15T10:00:00Z',
+          updated_at: '2026-06-15T10:00:00Z'
         },
         {
           id: 103,
@@ -56,7 +58,8 @@ class DatabaseEngine {
           status: 'Active',
           school: 'Public School',
           board: 'CBSE',
-          created_at: '2026-04-01T10:00:00Z'
+          created_at: '2026-04-01T10:00:00Z',
+          updated_at: '2026-04-01T10:00:00Z'
         }
       ];
       localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(defaultStudents));
@@ -137,9 +140,14 @@ class DatabaseEngine {
     }
   }
 
-  // --- STUDENT RECORD OPERATIONS ---
+  // --- STUDENT RECORD OPERATIONS (NEW & UPDATED STUDENTS ALWAYS AT TOP!) ---
   getStudents() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
+    const list = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
+    return list.sort((a, b) => {
+      const timeA = new Date(a.updated_at || a.created_at || a.id).getTime();
+      const timeB = new Date(b.updated_at || b.created_at || b.id).getTime();
+      return timeB - timeA; // NEWEST & RECENTLY UPDATED STUDENTS AT VERY TOP!
+    });
   }
 
   getStudentById(id) {
@@ -147,9 +155,20 @@ class DatabaseEngine {
     return list.find(s => s.id === Number(id)) || null;
   }
 
+  touchStudentActivity(studentId) {
+    const rawList = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
+    const idx = rawList.findIndex(s => s.id === Number(studentId));
+    if (idx !== -1) {
+      rawList[idx].updated_at = new Date().toISOString();
+      localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(rawList));
+    }
+  }
+
   addStudent(studentData) {
-    const list = this.getStudents();
+    const rawList = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
     const todayStr = new Date().toISOString().split('T')[0];
+    const nowIso = new Date().toISOString();
+
     const newStudent = {
       id: Date.now(),
       name: studentData.name.trim(),
@@ -160,31 +179,33 @@ class DatabaseEngine {
       status: studentData.status || 'Active',
       school: studentData.school ? studentData.school.trim() : '',
       board: studentData.board || 'CBSE',
-      created_at: new Date().toISOString()
+      created_at: nowIso,
+      updated_at: nowIso
     };
 
-    list.push(newStudent);
-    localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(list));
+    rawList.push(newStudent);
+    localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(rawList));
     return newStudent;
   }
 
   updateStudent(id, updatedFields) {
-    const list = this.getStudents();
-    const idx = list.findIndex(s => s.id === Number(id));
+    const rawList = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
+    const idx = rawList.findIndex(s => s.id === Number(id));
     if (idx !== -1) {
-      list[idx] = {
-        ...list[idx],
+      rawList[idx] = {
+        ...rawList[idx],
         ...updatedFields,
-        monthly_fee: Number(updatedFields.monthly_fee || list[idx].monthly_fee)
+        monthly_fee: Number(updatedFields.monthly_fee || rawList[idx].monthly_fee),
+        updated_at: new Date().toISOString()
       };
-      localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(list));
-      return list[idx];
+      localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(rawList));
+      return rawList[idx];
     }
     return null;
   }
 
   deleteStudent(id) {
-    let list = this.getStudents();
+    let list = JSON.parse(localStorage.getItem(STORAGE_KEYS.STUDENTS) || '[]');
     list = list.filter(s => s.id !== Number(id));
     localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(list));
 
@@ -255,6 +276,7 @@ class DatabaseEngine {
 
     list.push(newPayment);
     localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(list));
+    this.touchStudentActivity(newPayment.student_id);
     return newPayment;
   }
 
@@ -292,6 +314,7 @@ class DatabaseEngine {
 
     list.push(newCharge);
     localStorage.setItem(STORAGE_KEYS.EXTRA_CHARGES, JSON.stringify(list));
+    this.touchStudentActivity(newCharge.student_id);
     return newCharge;
   }
 
@@ -319,6 +342,7 @@ class DatabaseEngine {
         payment_date: new Date().toISOString()
       });
 
+      this.touchStudentActivity(charge.student_id);
       return { charge: list[idx], payment: pmt };
     }
     return null;
