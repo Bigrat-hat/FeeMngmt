@@ -270,7 +270,7 @@ class DBService {
     return newPayment;
   }
 
-  // --- Chronological Cumulative Financial Engine ---
+  // --- 1-Month Cycle Date-Based Financial Engine ---
   calculateStudentFinancials(studentId, referenceDate = new Date()) {
     const student = this.getStudentById(studentId);
     if (!student) return null;
@@ -279,17 +279,27 @@ class DBService {
     const joiningDate = new Date(student.joining_date);
     const refYear = referenceDate.getFullYear();
     const refMonthIdx = referenceDate.getMonth();
+    const refDay = referenceDate.getDate();
+
+    const joiningDay = joiningDate.getDate();
 
     const billingMonths = [];
     let startY = joiningDate.getFullYear();
     let startM = joiningDate.getMonth();
 
     while (startY < refYear || (startY === refYear && startM <= refMonthIdx)) {
-      billingMonths.push({
-        year: startY,
-        monthIdx: startM,
-        monthName: MONTH_NAMES[startM]
-      });
+      // For current month, include in due cycle only if current date >= joining date anniversary!
+      const isPastMonth = (startY < refYear) || (startY === refYear && startM < refMonthIdx);
+      const isCurrentMonthCycleComplete = (startY === refYear && startM === refMonthIdx && refDay >= joiningDay);
+
+      if (isPastMonth || isCurrentMonthCycleComplete) {
+        billingMonths.push({
+          year: startY,
+          monthIdx: startM,
+          monthName: MONTH_NAMES[startM]
+        });
+      }
+
       startM++;
       if (startM > 11) {
         startM = 0;
@@ -332,17 +342,15 @@ class DBService {
 
     const totalCurrentDue = monthDetails.reduce((sum, m) => sum + m.remainingBalance, 0);
 
-    const joiningDay = joiningDate.getDate();
-    const currentDay = referenceDate.getDate();
     let dueStatus = 'UPCOMING';
 
     if (totalCurrentDue === 0) {
       dueStatus = 'PAID';
     } else {
-      if (currentDay > joiningDay || monthDetails.filter(m => !m.isPaid).length > 1) {
-        dueStatus = 'OVERDUE';
-      } else if (currentDay === joiningDay) {
+      if (refDay === joiningDay) {
         dueStatus = 'DUE TODAY';
+      } else if (refDay > joiningDay || monthDetails.filter(m => !m.isPaid).length > 1) {
+        dueStatus = 'OVERDUE';
       } else {
         dueStatus = 'UPCOMING';
       }
