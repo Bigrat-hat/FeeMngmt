@@ -42,7 +42,7 @@ function initMidnightRealtimeClock() {
 // PWA Back Button Lock
 function initHistoryLock() {
   history.pushState(null, '', location.href);
-  window.onpopstate = function() {
+  window.onpopstate = function () {
     history.pushState(null, '', location.href);
     if (activeModal) {
       closeModal();
@@ -68,7 +68,7 @@ function initPWA() {
 }
 
 // Global Tab Switcher
-window.switchTab = function(tabName) {
+window.switchTab = function (tabName) {
   if (currentTab === tabName) return;
   currentTab = tabName;
   updateNavActiveState();
@@ -165,7 +165,7 @@ function renderAdminLoginView() {
   `;
 }
 
-window.handleAdminLoginSubmit = function(e) {
+window.handleAdminLoginSubmit = function (e) {
   e.preventDefault();
   const p = document.getElementById('loginPassword').value;
 
@@ -179,7 +179,7 @@ window.handleAdminLoginSubmit = function(e) {
   }
 };
 
-window.handleAdminLogout = function() {
+window.handleAdminLogout = function () {
   if (confirm('Log out from Anshu Coaching Admin Portal?')) {
     isLoggedIn = false;
     localStorage.removeItem('anshu_admin_logged_in');
@@ -189,7 +189,7 @@ window.handleAdminLogout = function() {
 };
 
 // Modal Trigger Helpers
-window.openModal = function(modalName, payload = null) {
+window.openModal = function (modalName, payload = null) {
   activeModal = modalName;
   if (modalName === 'collect-fee' && payload) {
     selectedStudentForCollect = payload;
@@ -225,7 +225,7 @@ window.openModal = function(modalName, payload = null) {
   renderActiveModal();
 };
 
-window.closeModal = function() {
+window.closeModal = function () {
   activeModal = null;
   selectedStudentForCollect = null;
   profileStudentId = null;
@@ -433,7 +433,7 @@ function renderStudentCardListHTML(students) {
   }).join('');
 }
 
-window.onStudentSearchInput = function(e) {
+window.onStudentSearchInput = function (e) {
   searchQuery = e.target.value;
   const container = document.getElementById('students-list-container');
   if (container) {
@@ -441,7 +441,7 @@ window.onStudentSearchInput = function(e) {
   }
 };
 
-window.onStudentSearchKeyDown = function(e) {
+window.onStudentSearchKeyDown = function (e) {
   if (e.key === 'Enter') {
     e.target.blur();
   }
@@ -589,7 +589,7 @@ function renderCollectFeesView(students) {
   `;
 }
 
-window.applyStationeryPreset = function(itemName, price) {
+window.applyStationeryPreset = function (itemName, price) {
   const nameInput = document.getElementById('extra_item_name');
   const priceInput = document.getElementById('extra_charge_amount');
   if (nameInput && priceInput) {
@@ -598,12 +598,12 @@ window.applyStationeryPreset = function(itemName, price) {
   }
 };
 
-window.onStudentSelectForCollect = function(studentId) {
+window.onStudentSelectForCollect = function (studentId) {
   selectedStudentForCollect = studentId;
   renderCurrentTab();
 };
 
-window.handleFeeCollection = function(event) {
+window.handleFeeCollection = function (event) {
   event.preventDefault();
   const form = event.target;
   const studentId = form.student_id.value;
@@ -666,7 +666,7 @@ function renderCalendarView(students) {
   const isCurrentLiveMonth = (calendarViewYear === new Date().getFullYear() && calendarViewMonthIdx === new Date().getMonth());
 
   const selectedDay = selectedCalendarDay || (isCurrentLiveMonth ? new Date().getDate() : 1);
-  
+
   const joiningStudents = students.filter(s => {
     const d = new Date(s.joining_date);
     return d.getDate() === selectedDay;
@@ -754,7 +754,7 @@ function renderCalendarView(students) {
   `;
 }
 
-window.navigateCalendarMonth = function(delta) {
+window.navigateCalendarMonth = function (delta) {
   calendarViewMonthIdx += delta;
   if (calendarViewMonthIdx > 11) {
     calendarViewMonthIdx = 0;
@@ -766,7 +766,7 @@ window.navigateCalendarMonth = function(delta) {
   renderCurrentTab();
 };
 
-window.resetCalendarToToday = function() {
+window.resetCalendarToToday = function () {
   const now = new Date();
   calendarViewYear = now.getFullYear();
   calendarViewMonthIdx = now.getMonth();
@@ -806,7 +806,7 @@ function renderCalendarGridDays(students) {
   return gridHTML;
 }
 
-window.onCalendarDaySelect = function(day) {
+window.onCalendarDaySelect = function (day) {
   selectedCalendarDay = day;
   renderCurrentTab();
 };
@@ -849,7 +849,7 @@ function renderActiveModal() {
               <div class="form-group">
                 <label class="form-label">Class (1st to 10th) *</label>
                 <select name="class" class="form-control" required>
-                  ${[1,2,3,4,5,6,7,8,9,10].map(c => `<option value="Class ${c}" ${c===10?'selected':''}>Class ${c}</option>`).join('')}
+                  ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(c => `<option value="Class ${c}" ${c === 10 ? 'selected' : ''}>Class ${c}</option>`).join('')}
                 </select>
               </div>
             </div>
@@ -895,7 +895,7 @@ function renderActiveModal() {
         </div>
       </div>
     `;
-  } 
+  }
 
   // Modal 2: Add Khata / Udhaar Extra Charge Item Modal
   else if (activeModal === 'add-khata' && profileStudentId) {
@@ -984,7 +984,7 @@ function renderActiveModal() {
               <div class="form-group">
                 <label class="form-label">Class *</label>
                 <select name="class" class="form-control" required>
-                  ${[1,2,3,4,5,6,7,8,9,10].map(c => `
+                  ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(c => `
                     <option value="Class ${c}" ${student.class === 'Class ' + c ? 'selected' : ''}>Class ${c}</option>
                   `).join('')}
                 </select>
@@ -1057,8 +1057,8 @@ function renderActiveModal() {
 
           <div style="max-height:260px; overflow-y:auto; margin-bottom:14px;">
             ${boardStudents.length > 0 ? boardStudents.map(s => {
-              const fin = db.calculateStudentFinancials(s.id);
-              return `
+      const fin = db.calculateStudentFinancials(s.id);
+      return `
                 <div class="student-card-item" onclick="closeModal(); openModal('student-profile', ${s.id});" style="margin-bottom:8px;">
                   <div style="display:flex; align-items:center; gap:8px;">
                     <span class="student-avatar">${s.gender === 'Female' ? '👧' : '👦'}</span>
@@ -1072,7 +1072,7 @@ function renderActiveModal() {
                   </div>
                 </div>
               `;
-            }).join('') : `
+    }).join('') : `
               <div style="text-align:center; padding:30px 10px; color:var(--emerald-600); font-size:12px;">
                 No active students enrolled under ${displayBoardTitle}.
               </div>
@@ -1190,10 +1190,10 @@ function renderActiveModal() {
                   <div style="font-size:9px; color:var(--emerald-600);">Fee: ₹${bm.baseFee}</div>
                 </div>
                 <div>
-                  ${bm.isPaid ? 
-                    `<span class="badge badge-paid">✓ PAID</span>` : 
-                    `<span class="badge badge-overdue">🔴 PENDING ₹${bm.remainingBalance}</span>`
-                  }
+                  ${bm.isPaid ?
+        `<span class="badge badge-paid">✓ PAID</span>` :
+        `<span class="badge badge-overdue">🔴 PENDING ₹${bm.remainingBalance}</span>`
+      }
                 </div>
               </div>
             `).join('')}
@@ -1252,8 +1252,8 @@ function renderActiveModal() {
 
           <div style="max-height:240px; overflow-y:auto; margin-bottom:14px;">
             ${dueStudents.length > 0 ? dueStudents.map(s => {
-              const fin = db.calculateStudentFinancials(s.id);
-              return `
+      const fin = db.calculateStudentFinancials(s.id);
+      return `
                 <div class="student-card-item" onclick="closeModal(); openModal('student-profile', ${s.id});" style="margin-bottom:8px;">
                   <div style="display:flex; align-items:center; gap:8px;">
                     <span class="student-avatar">${s.gender === 'Female' ? '👧' : '👦'}</span>
@@ -1267,7 +1267,7 @@ function renderActiveModal() {
                   </div>
                 </div>
               `;
-            }).join('') : `
+    }).join('') : `
               <div style="text-align:center; padding:30px 10px; color:var(--emerald-600); font-size:12px;">
                 No recurring student dues scheduled on ${currentMonthName} ${selectedCalendarDay}.
               </div>
@@ -1373,7 +1373,7 @@ function renderActiveModal() {
 }
 
 // Khata Modal Preset Helper
-window.applyKhataModalPreset = function(itemName, price) {
+window.applyKhataModalPreset = function (itemName, price) {
   const nameInput = document.getElementById('khata_modal_item_name');
   const priceInput = document.getElementById('khata_modal_amount');
   if (nameInput && priceInput) {
@@ -1382,7 +1382,7 @@ window.applyKhataModalPreset = function(itemName, price) {
   }
 };
 
-window.handleAddKhataSubmit = function(event) {
+window.handleAddKhataSubmit = function (event) {
   event.preventDefault();
   const form = event.target;
   const studentId = form.student_id.value;
@@ -1401,10 +1401,10 @@ window.handleAddKhataSubmit = function(event) {
   openModal('student-profile', studentId);
 };
 
-window.handleClearKhataItem = function(chargeId) {
+window.handleClearKhataItem = function (chargeId) {
   const mode = confirm('Click OK for Cash 💵 payment, or CANCEL for Online 🌐 payment?') ? 'Cash' : 'Online';
   const result = db.clearExtraCharge(chargeId, mode);
-  
+
   if (result && result.payment) {
     const student = db.getStudentById(result.charge.student_id);
     receiptData = {
@@ -1419,7 +1419,7 @@ window.handleClearKhataItem = function(chargeId) {
   }
 };
 
-window.handleAddStudentSubmit = function(event) {
+window.handleAddStudentSubmit = function (event) {
   event.preventDefault();
   const form = event.target;
   db.addStudent({
@@ -1436,7 +1436,7 @@ window.handleAddStudentSubmit = function(event) {
   renderCurrentTab();
 };
 
-window.handleEditStudentSubmit = function(event) {
+window.handleEditStudentSubmit = function (event) {
   event.preventDefault();
   const form = event.target;
   db.updateStudent(form.id.value, {
@@ -1453,10 +1453,10 @@ window.handleEditStudentSubmit = function(event) {
   renderCurrentTab();
 };
 
-window.handleDeleteStudent = function(studentId) {
+window.handleDeleteStudent = function (studentId) {
   const student = db.getStudentById(studentId);
   if (!student) return;
-  
+
   const confirmWarning = confirm(
     `⚠️ WARNING: Are you sure you want to permanently delete student "${student.name}" (${student.class})?\n\nThis action CANNOT be undone and all fee history records for this student will be permanently erased.`
   );
@@ -1468,7 +1468,7 @@ window.handleDeleteStudent = function(studentId) {
   }
 };
 
-window.resetDemoData = function() {
+window.resetDemoData = function () {
   if (confirm('Reset system data to original sample dataset?')) {
     db.resetToDefaults();
     renderCurrentTab();
