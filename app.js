@@ -11,12 +11,24 @@ let selectedCalendarDay = null;
 let activeModal = null; // 'add-student', 'edit-student', 'collect-fee', 'student-profile', 'pending-list', 'calendar-day', 'receipt'
 let receiptData = null;
 
-// Initialize Application & PWA Service Worker
+// Initialize Application, PWA Service Worker & Back Button Lock
 document.addEventListener('DOMContentLoaded', () => {
+  initHistoryLock();
   renderCurrentTab();
   updateNavActiveState();
   initPWA();
 });
+
+// PWA Back Button Lock (Prevents exiting app when pressing physical/gesture back button)
+function initHistoryLock() {
+  history.pushState(null, '', location.href);
+  window.onpopstate = function() {
+    history.pushState(null, '', location.href);
+    if (activeModal) {
+      closeModal();
+    }
+  };
+}
 
 // Auto-Update PWA Service Worker Handler
 function initPWA() {
@@ -104,13 +116,13 @@ function renderAdminLoginView() {
     <div style="display:flex; flex-direction:column; justify-content:center; min-height:100%; padding:20px 10px;">
       
       <div style="text-align:center; margin-bottom:28px;">
-        <div class="brand-icon" style="width:58px; height:58px; font-size:28px; border-radius:18px; margin:0 auto 12px auto; box-shadow:0 12px 28px rgba(38,58,71,0.25);">A</div>
-        <h1 style="font-size:24px; font-weight:800; color:var(--slate-900);">Anshu Coaching Classes</h1>
-        <p style="font-size:13px; color:var(--slate-500); font-weight:700; margin-top:2px;">Fee Management Portal</p>
+        <div class="brand-icon" style="width:58px; height:58px; font-size:28px; border-radius:18px; margin:0 auto 12px auto; box-shadow:0 12px 28px rgba(38,58,71,0.4);">A</div>
+        <h1 style="font-size:24px; font-weight:800; color:var(--text-main);">Anshu Coaching Classes</h1>
+        <p style="font-size:13px; color:var(--canva-slate-100); font-weight:700; margin-top:2px;">Fee Management Portal</p>
       </div>
 
       <div class="glass-card" style="padding:22px; border-radius:24px;">
-        <h3 style="font-size:15px; font-weight:800; color:var(--slate-900); margin-bottom:14px; text-align:center;">Enter Admin Password</h3>
+        <h3 style="font-size:15px; font-weight:800; color:var(--text-main); margin-bottom:14px; text-align:center;">Enter Admin Password</h3>
 
         <form onsubmit="handleAdminLoginSubmit(event)">
           <div class="form-group">
@@ -127,7 +139,7 @@ function renderAdminLoginView() {
         </form>
       </div>
 
-      <div style="text-align:center; margin-top:20px; font-size:10px; color:var(--slate-500);">
+      <div style="text-align:center; margin-top:20px; font-size:10px; color:var(--canva-slate-300);">
         Anshu Coaching Classes Fee Management v1.0.0
       </div>
 
@@ -193,7 +205,7 @@ function renderDashboardView(metrics) {
     <div class="metrics-grid-2x2">
       <div class="glass-card metric-card-compact">
         <div class="metric-lbl">ACTIVE STUDENTS</div>
-        <div class="metric-val">${metrics.activeStudents} <span style="font-size:12px; color:var(--slate-500);">/ ${metrics.totalStudents}</span></div>
+        <div class="metric-val">${metrics.activeStudents} <span style="font-size:12px; color:var(--canva-slate-300);">/ ${metrics.totalStudents}</span></div>
         <div class="metric-sub">Enrolled Students</div>
       </div>
 
@@ -210,7 +222,7 @@ function renderDashboardView(metrics) {
       </div>
 
       <!-- Clickable Pending Dues Card -->
-      <div class="glass-card metric-card-compact clickable-card" onclick="openModal('pending-list')" style="border:1.5px solid rgba(239, 68, 68, 0.4); background:rgba(255,245,245,0.9);">
+      <div class="glass-card metric-card-compact clickable-card" onclick="openModal('pending-list')" style="border:1.5px solid rgba(239, 68, 68, 0.45); background:rgba(239,68,68,0.12);">
         <div class="metric-lbl" style="color:var(--status-overdue-text);">PENDING DUES 🔍</div>
         <div class="metric-val" style="color:var(--status-overdue-text)">₹${metrics.totalAggregateDue}</div>
         <div class="metric-sub" style="font-weight:700; color:var(--status-overdue-text);">${metrics.pendingStudentsCount} Students (Tap for list)</div>
@@ -235,7 +247,7 @@ function renderDashboardView(metrics) {
 
     <!-- Collection Trend Chart -->
     <div class="glass-card">
-      <h3 style="font-size:13px; font-weight:800; color:var(--slate-900); margin-bottom:8px;">Revenue Collection Trend (2026)</h3>
+      <h3 style="font-size:13px; font-weight:800; color:var(--text-main); margin-bottom:8px;">Revenue Collection Trend (2026)</h3>
       <div style="height:160px;">
         <canvas id="revenueTrendChart"></canvas>
       </div>
@@ -257,13 +269,13 @@ function initDashboardCharts() {
         {
           label: 'Cash',
           data: trendData.slice(0, 7).map(d => d.Cash),
-          backgroundColor: '#263A47',
+          backgroundColor: '#4A5B6A',
           borderRadius: 6
         },
         {
           label: 'Online',
           data: trendData.slice(0, 7).map(d => d.Online),
-          backgroundColor: '#98A9BE',
+          backgroundColor: '#B4C5DB',
           borderRadius: 6
         }
       ]
@@ -271,67 +283,89 @@ function initDashboardCharts() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: { legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9 } } } },
-      scales: { x: { stacked: true }, y: { stacked: true } }
+      plugins: { legend: { position: 'top', labels: { boxWidth: 8, font: { size: 9 }, color: '#B4C5DB' } } },
+      scales: {
+        x: { stacked: true, ticks: { color: '#B4C5DB' } },
+        y: { stacked: true, ticks: { color: '#B4C5DB' } }
+      }
     }
   });
 }
 
-// --- 2. Students Directory View ---
+// --- 2. Students Directory View (Targeted In-Place DOM Filter - Fixes Keyboard Closing Bug!) ---
 function renderStudentsView(students) {
+  return `
+    <!-- Search Pill (Keyboard Fix: In-place DOM filter & Enter Key Blur) -->
+    <div class="search-pill-wrapper">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="text" id="studentSearchInput" class="search-pill-input" placeholder="Search student name, class, active, left..." value="${searchQuery}" oninput="onStudentSearchInput(event)" onkeydown="onStudentSearchKeyDown(event)" />
+    </div>
+
+    <p style="font-size:10px; color:var(--canva-slate-300); margin-bottom:8px; text-align:right;">💡 Tap any student to view profile, edit status (Active/Left/Closed) or delete</p>
+
+    <!-- Student Cards List Container -->
+    <div id="students-list-container">
+      ${renderStudentCardListHTML(students)}
+    </div>
+  `;
+}
+
+function renderStudentCardListHTML(students) {
   let filtered = students;
   if (searchQuery) {
     const q = searchQuery.toLowerCase();
     filtered = filtered.filter(s => s.name.toLowerCase().includes(q) || s.class.toLowerCase().includes(q) || s.status.toLowerCase().includes(q));
   }
 
-  return `
-    <!-- Search Pill -->
-    <div class="search-pill-wrapper">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-      <input type="text" class="search-pill-input" placeholder="Search student name, class, active, left..." value="${searchQuery}" oninput="onStudentSearchInput(event)" />
-    </div>
+  if (filtered.length === 0) {
+    return `<div style="text-align:center; padding:30px 10px; color:var(--canva-slate-300); font-size:12px;">No student records found matching "${searchQuery}".</div>`;
+  }
 
-    <p style="font-size:10px; color:var(--slate-500); margin-bottom:8px; text-align:right;">💡 Tap any student to view profile, edit status (Active/Left/Closed) or delete</p>
+  return filtered.map(s => {
+    const fin = db.calculateStudentFinancials(s.id);
+    const avatar = s.gender === 'Female' ? '👧' : '👦';
+    const isDiscontinued = s.status === 'Left' || s.status === 'Session Closed';
 
-    <!-- Student Cards List -->
-    <div>
-      ${filtered.map(s => {
-        const fin = db.calculateStudentFinancials(s.id);
-        const avatar = s.gender === 'Female' ? '👧' : '👦';
-        const isDiscontinued = s.status === 'Left' || s.status === 'Session Closed';
-
-        return `
-          <div class="student-card-item" onclick="openModal('student-profile', ${s.id})" style="${isDiscontinued ? 'opacity:0.75; background:rgba(240,244,248,0.7);' : ''}">
-            <div style="display:flex; align-items:center; gap:10px;">
-              <span class="student-avatar">${avatar}</span>
-              <div>
-                <div style="font-size:13px; font-weight:700; color:var(--slate-900); display:flex; align-items:center; gap:6px;">
-                  ${s.name}
-                  ${s.status === 'Left' ? '<span class="badge badge-due" style="font-size:8px;">LEFT</span>' : ''}
-                  ${s.status === 'Session Closed' ? '<span class="badge badge-closed" style="font-size:8px;">CLOSED</span>' : ''}
-                </div>
-                <div style="font-size:10px; color:var(--slate-500);">${s.class} • ₹${s.monthly_fee}/mo ${s.school ? '• ' + s.school : ''}</div>
-              </div>
+    return `
+      <div class="student-card-item" onclick="openModal('student-profile', ${s.id})" style="${isDiscontinued ? 'opacity:0.75; background:rgba(74,91,106,0.2);' : ''}">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span class="student-avatar">${avatar}</span>
+          <div>
+            <div style="font-size:13px; font-weight:700; color:var(--text-main); display:flex; align-items:center; gap:6px;">
+              ${s.name}
+              ${s.status === 'Left' ? '<span class="badge badge-due" style="font-size:8px;">LEFT</span>' : ''}
+              ${s.status === 'Session Closed' ? '<span class="badge badge-closed" style="font-size:8px;">CLOSED</span>' : ''}
             </div>
-            <div style="text-align:right;">
-              ${isDiscontinued ? `<span class="badge badge-closed">${s.status.toUpperCase()}</span>` : renderStatusBadge(fin.dueStatus, fin.totalCurrentDue)}
-              ${!isDiscontinued ? `
-                <div style="margin-top:4px;">
-                  <button class="btn-secondary" style="padding:4px 8px; font-size:10px;" onclick="event.stopPropagation(); openModal('collect-fee', ${s.id})">Collect</button>
-                </div>
-              ` : ''}
-            </div>
+            <div style="font-size:10px; color:var(--canva-slate-300);">${s.class} • ₹${s.monthly_fee}/mo ${s.school ? '• ' + s.school : ''}</div>
           </div>
-        `;
-      }).join('')}
-    </div>
-  `;
+        </div>
+        <div style="text-align:right;">
+          ${isDiscontinued ? `<span class="badge badge-closed">${s.status.toUpperCase()}</span>` : renderStatusBadge(fin.dueStatus, fin.totalCurrentDue)}
+          ${!isDiscontinued ? `
+            <div style="margin-top:4px;">
+              <button class="btn-secondary" style="padding:4px 8px; font-size:10px;" onclick="event.stopPropagation(); openModal('collect-fee', ${s.id})">Collect</button>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
+// In-place real-time search filtering without destroying input focus or closing keyboard!
 window.onStudentSearchInput = function(e) {
   searchQuery = e.target.value;
-  renderCurrentTab();
+  const container = document.getElementById('students-list-container');
+  if (container) {
+    container.innerHTML = renderStudentCardListHTML(db.getStudents());
+  }
+};
+
+// Pressing Enter or Done dismisses the keyboard!
+window.onStudentSearchKeyDown = function(e) {
+  if (e.key === 'Enter') {
+    e.target.blur(); // Dismisses mobile virtual keyboard on Enter!
+  }
 };
 
 function renderStatusBadge(status, dueAmount) {
@@ -354,7 +388,7 @@ function renderCollectFeesView(students) {
 
   return `
     <div class="glass-card">
-      <h3 style="font-size:15px; font-weight:800; color:var(--slate-900); margin-bottom:10px;">Fee Collection Wizard</h3>
+      <h3 style="font-size:15px; font-weight:800; color:var(--text-main); margin-bottom:10px;">Fee Collection Wizard</h3>
 
       <div class="form-group">
         <label class="form-label">Select Student</label>
@@ -371,16 +405,16 @@ function renderCollectFeesView(students) {
         <div class="formula-box">
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
             <div>
-              <span style="font-size:9px; color:var(--slate-500);">Monthly Fee:</span>
+              <span style="font-size:9px; color:var(--canva-slate-300);">Monthly Fee:</span>
               <div style="font-weight:700; font-size:12px;">₹${fin.student.monthly_fee}</div>
             </div>
             <div>
-              <span style="font-size:9px; color:var(--slate-500);">Arrears:</span>
+              <span style="font-size:9px; color:var(--canva-slate-300);">Arrears:</span>
               <div style="font-weight:700; font-size:12px; color:var(--status-overdue-text);">₹${fin.currentArrears}</div>
             </div>
             <div style="grid-column: span 2; margin-top:2px;">
-              <span style="font-size:9px; color:var(--slate-500);">Total Payable:</span>
-              <div style="font-size:16px; font-weight:800; color:var(--slate-900);">₹${fin.totalCurrentDue}</div>
+              <span style="font-size:9px; color:var(--canva-slate-300);">Total Payable:</span>
+              <div style="font-size:16px; font-weight:800; color:var(--text-main);">₹${fin.totalCurrentDue}</div>
             </div>
           </div>
         </div>
@@ -467,11 +501,11 @@ function renderCalendarView(students) {
   return `
     <div class="glass-card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <h3 style="font-size:15px; font-weight:800; color:var(--slate-900);">July 2026 Fee Calendar</h3>
-        <span style="font-size:10px; color:var(--slate-500); font-weight:700;">💡 Tap date to view dues</span>
+        <h3 style="font-size:15px; font-weight:800; color:var(--text-main);">July 2026 Fee Calendar</h3>
+        <span style="font-size:10px; color:var(--canva-slate-300); font-weight:700;">💡 Tap date to view dues</span>
       </div>
 
-      <div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:4px; font-size:10px; font-weight:800; color:var(--slate-500); text-align:center; margin-bottom:8px;">
+      <div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:4px; font-size:10px; font-weight:800; color:var(--canva-slate-300); text-align:center; margin-bottom:8px;">
         <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
       </div>
       <div style="display:grid; grid-template-columns: repeat(7, 1fr); gap:4px;">
@@ -484,7 +518,7 @@ function renderCalendarView(students) {
 function renderCalendarGridDays(students) {
   let gridHTML = '';
   for (let i = 0; i < 3; i++) {
-    gridHTML += `<div style="height:38px; background:rgba(255,255,255,0.2); border-radius:8px;"></div>`;
+    gridHTML += `<div style="height:38px; background:rgba(255,255,255,0.05); border-radius:8px;"></div>`;
   }
   for (let day = 1; day <= 31; day++) {
     const isToday = day === 28;
@@ -492,9 +526,9 @@ function renderCalendarGridDays(students) {
     const hasDue = dueStudents.length > 0;
 
     gridHTML += `
-      <div class="clickable-card" onclick="openModal('calendar-day', ${day})" style="height:38px; background:${isToday ? 'var(--slate-900)' : hasDue ? 'rgba(180, 197, 219, 0.45)' : 'rgba(255,255,255,0.85)'}; color:${isToday ? 'white' : 'var(--slate-900)'}; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; font-weight:700;">
+      <div class="clickable-card" onclick="openModal('calendar-day', ${day})" style="height:38px; background:${isToday ? 'var(--canva-slate-100)' : hasDue ? 'rgba(114, 132, 149, 0.45)' : 'rgba(74, 91, 106, 0.3)'}; color:${isToday ? 'var(--canva-slate-900)' : 'var(--text-main)'}; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; font-weight:700;">
         <span>${day}</span>
-        ${hasDue ? `<span style="width:4px; height:4px; background:${isToday ? '#B4C5DB' : '#059669'}; border-radius:50%; margin-top:2px;"></span>` : ''}
+        ${hasDue ? `<span style="width:4px; height:4px; background:${isToday ? '#263A47' : '#34D399'}; border-radius:50%; margin-top:2px;"></span>` : ''}
       </div>
     `;
   }
@@ -686,7 +720,7 @@ function renderActiveModal() {
               <span class="student-avatar" style="width:42px; height:42px; font-size:20px;">${avatar}</span>
               <div>
                 <h3 class="modal-title">${fin.student.name}</h3>
-                <div style="font-size:10px; color:var(--slate-500);">
+                <div style="font-size:10px; color:var(--canva-slate-300);">
                   ${fin.student.class} ${fin.student.status !== 'Active' ? '• ' + fin.student.status : ''}
                 </div>
               </div>
@@ -700,21 +734,21 @@ function renderActiveModal() {
           <div class="formula-box" style="margin-top:4px; margin-bottom:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
-                <span style="font-size:10px; color:var(--slate-500);">Monthly Fee: ₹${fin.student.monthly_fee} • Joined: ${fin.student.joining_date}</span>
-                <div style="font-size:15px; font-weight:800; color:var(--slate-900);">Total Outstanding Dues</div>
+                <span style="font-size:10px; color:var(--canva-slate-300);">Monthly Fee: ₹${fin.student.monthly_fee} • Joined: ${fin.student.joining_date}</span>
+                <div style="font-size:15px; font-weight:800; color:var(--text-main);">Total Outstanding Dues</div>
               </div>
               <div style="font-size:20px; font-weight:800; color:var(--status-overdue-text);">₹${fin.totalCurrentDue}</div>
             </div>
           </div>
 
-          <h4 style="font-size:11px; font-weight:800; color:var(--slate-700); margin-bottom:6px;">Month-by-Month Fee Audit</h4>
+          <h4 style="font-size:11px; font-weight:800; color:var(--canva-slate-100); margin-bottom:6px;">Month-by-Month Fee Audit</h4>
           
           <div style="max-height:180px; overflow-y:auto; margin-bottom:12px;">
             ${fin.billingMonths.map(bm => `
               <div class="month-pending-row">
                 <div>
                   <strong>${bm.monthName} ${bm.year}</strong>
-                  <div style="font-size:9px; color:var(--slate-500);">Fee: ₹${bm.baseFee} ${bm.previousArrears > 0 ? '+ Arrears: ₹' + bm.previousArrears : ''}</div>
+                  <div style="font-size:9px; color:var(--canva-slate-300);">Fee: ₹${bm.baseFee} ${bm.previousArrears > 0 ? '+ Arrears: ₹' + bm.previousArrears : ''}</div>
                 </div>
                 <div>
                   ${bm.isPaid ? 
@@ -752,7 +786,7 @@ function renderActiveModal() {
           <div class="modal-header">
             <div>
               <h3 class="modal-title">July ${selectedCalendarDay}, 2026 - Dues Timeline</h3>
-              <div style="font-size:10px; color:var(--slate-500); font-weight:700;">
+              <div style="font-size:10px; color:var(--canva-slate-300); font-weight:700;">
                 ${dueStudents.length} Student(s) with monthly fee baseline on the ${selectedCalendarDay}th
               </div>
             </div>
@@ -767,8 +801,8 @@ function renderActiveModal() {
                   <div style="display:flex; align-items:center; gap:8px;">
                     <span class="student-avatar">${s.gender === 'Female' ? '👧' : '👦'}</span>
                     <div>
-                      <div style="font-size:12px; font-weight:700; color:var(--slate-900);">${s.name}</div>
-                      <div style="font-size:10px; color:var(--slate-500);">${s.class} • Monthly Fee: ₹${s.monthly_fee}</div>
+                      <div style="font-size:12px; font-weight:700; color:var(--text-main);">${s.name}</div>
+                      <div style="font-size:10px; color:var(--canva-slate-300);">${s.class} • Monthly Fee: ₹${s.monthly_fee}</div>
                     </div>
                   </div>
                   <div style="text-align:right;">
@@ -777,7 +811,7 @@ function renderActiveModal() {
                 </div>
               `;
             }).join('') : `
-              <div style="text-align:center; padding:30px 10px; color:var(--slate-500); font-size:12px;">
+              <div style="text-align:center; padding:30px 10px; color:var(--canva-slate-300); font-size:12px;">
                 No recurring student dues scheduled on July ${selectedCalendarDay}.
               </div>
             `}
@@ -811,13 +845,13 @@ function renderActiveModal() {
                 <div style="display:flex; align-items:center; gap:8px;">
                   <span class="student-avatar">${item.student.gender === 'Female' ? '👧' : '👦'}</span>
                   <div>
-                    <div style="font-size:12px; font-weight:700; color:var(--slate-900);">${item.student.name}</div>
-                    <div style="font-size:10px; color:var(--slate-500);">${item.student.class}</div>
+                    <div style="font-size:12px; font-weight:700; color:var(--text-main);">${item.student.name}</div>
+                    <div style="font-size:10px; color:var(--canva-slate-300);">${item.student.class}</div>
                   </div>
                 </div>
                 <div style="text-align:right;">
                   <div style="font-size:13px; font-weight:800; color:var(--status-overdue-text);">₹${item.totalCurrentDue}</div>
-                  <div style="font-size:9px; color:var(--slate-500);">${item.pendingMonths.length} Pending Month(s)</div>
+                  <div style="font-size:9px; color:var(--canva-slate-300);">${item.pendingMonths.length} Pending Month(s)</div>
                 </div>
               </div>
             `).join('')}
@@ -838,8 +872,8 @@ function renderActiveModal() {
             <h3 class="modal-title">Receipt Acknowledgement</h3>
             <button class="close-btn" onclick="closeModal()">✕</button>
           </div>
-          <div style="border:1px dashed var(--slate-300); border-radius:14px; padding:14px; font-size:11px;">
-            <div style="text-align:center; font-weight:800; font-size:13px; margin-bottom:8px; color:var(--slate-900);">ANSHU COACHING CLASSES</div>
+          <div style="border:1px dashed var(--canva-slate-300); border-radius:14px; padding:14px; font-size:11px;">
+            <div style="text-align:center; font-weight:800; font-size:13px; margin-bottom:8px; color:var(--text-main);">ANSHU COACHING CLASSES</div>
             <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
               <span>Student:</span><strong>${receiptData.student.name}</strong>
             </div>
@@ -847,7 +881,7 @@ function renderActiveModal() {
               <span>Period:</span><strong>${receiptData.payment.month} ${receiptData.payment.year}</strong>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-              <span>Paid Amount:</span><strong style="font-size:13px; color:#059669;">₹${receiptData.payment.paid_amount}</strong>
+              <span>Paid Amount:</span><strong style="font-size:13px; color:#34D399;">₹${receiptData.payment.paid_amount}</strong>
             </div>
             <div style="display:flex; justify-content:space-between;">
               <span>Remaining Arrears:</span><strong>₹${receiptData.remainingArrears}</strong>

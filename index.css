@@ -1,38 +1,44 @@
-/* Anshu Coaching Classes - Ultra Premium Executive UI Design System */
+/* Anshu Coaching Classes - Canva Slate Color Palette & Ultra Advanced Glassmorphism */
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  /* Ultra Premium Palette: Deep Midnight & Cyan Spark */
-  --bg-deep: #0B132B;
-  --bg-canvas: #0F172A;
-  --card-bg: rgba(30, 41, 59, 0.82);
-  --card-bg-hover: rgba(30, 41, 59, 0.95);
-  --card-border: rgba(255, 255, 255, 0.12);
-  --card-border-glow: rgba(56, 189, 248, 0.35);
+  /* Exact Canva Color Palette from User Image */
+  --canva-slate-900: #263A47;
+  --canva-slate-700: #4A5B6A;
+  --canva-slate-500: #728495;
+  --canva-slate-300: #98A9BE;
+  --canva-slate-100: #B4C5DB;
 
-  --text-main: #F8FAFC;
-  --text-muted: #94A3B8;
-  --text-dim: #64748B;
+  /* Surface & Canvas */
+  --bg-deep: #1E2D38;
+  --bg-canvas: #263A47;
+  --card-bg: rgba(38, 58, 71, 0.85);
+  --card-bg-hover: rgba(74, 91, 106, 0.95);
+  --card-border: rgba(180, 197, 219, 0.22);
+  --card-border-glow: rgba(180, 197, 219, 0.45);
 
-  /* Accent Gradients */
-  --primary-gradient: linear-gradient(135deg, #0EA5E9 0%, #06B6D4 100%);
-  --primary-hover: linear-gradient(135deg, #0284C7 0%, #0891B2 100%);
-  --accent-cyan: #38BDF8;
-  --accent-glow: 0 8px 24px -4px rgba(14, 165, 233, 0.4);
+  --text-main: #FFFFFF;
+  --text-muted: #B4C5DB;
+  --text-dim: #98A9BE;
+
+  /* Gradients */
+  --primary-gradient: linear-gradient(135deg, #263A47 0%, #4A5B6A 100%);
+  --accent-gradient: linear-gradient(135deg, #4A5B6A 0%, #728495 100%);
+  --highlight-gradient: linear-gradient(135deg, #728495 0%, #98A9BE 100%);
 
   /* Status Colors */
-  --status-paid-bg: rgba(16, 185, 129, 0.16);
+  --status-paid-bg: rgba(16, 185, 129, 0.18);
   --status-paid-text: #34D399;
-  --status-paid-border: rgba(52, 211, 153, 0.35);
+  --status-paid-border: rgba(52, 211, 153, 0.4);
 
-  --status-due-bg: rgba(245, 158, 11, 0.16);
+  --status-due-bg: rgba(245, 158, 11, 0.18);
   --status-due-text: #FBBF24;
-  --status-due-border: rgba(251, 191, 36, 0.35);
+  --status-due-border: rgba(251, 191, 36, 0.4);
 
-  --status-overdue-bg: rgba(239, 68, 68, 0.18);
+  --status-overdue-bg: rgba(239, 68, 68, 0.2);
   --status-overdue-text: #F87171;
-  --status-overdue-border: rgba(248, 113, 113, 0.4);
+  --status-overdue-border: rgba(248, 113, 113, 0.45);
 
   --radius-pill: 9999px;
   --radius-card: 20px;
@@ -47,7 +53,7 @@
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation; /* Disable Zooming */
+  touch-action: manipulation;
 }
 
 html, body {
@@ -56,8 +62,8 @@ html, body {
   overflow: hidden;
   background-color: var(--bg-deep);
   background-image: 
-    radial-gradient(circle at 15% 15%, rgba(14, 165, 233, 0.15) 0%, transparent 45%),
-    radial-gradient(circle at 85% 85%, rgba(6, 182, 212, 0.12) 0%, transparent 45%);
+    radial-gradient(circle at 10% 10%, rgba(180, 197, 219, 0.18) 0%, transparent 45%),
+    radial-gradient(circle at 90% 90%, rgba(114, 132, 149, 0.25) 0%, transparent 45%);
   user-select: none;
   color: var(--text-main);
 }
@@ -77,10 +83,10 @@ html, body {
   max-width: 440px;
   height: 100%;
   max-height: 880px;
-  background: var(--bg-canvas);
+  background: var(--canva-slate-900);
   border-radius: 36px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 25px 70px -15px rgba(0, 0, 0, 0.65), 0 0 30px 0 rgba(14, 165, 233, 0.12);
+  border: 1px solid rgba(180, 197, 219, 0.25);
+  box-shadow: 0 25px 70px -15px rgba(0, 0, 0, 0.65), 0 0 30px 0 rgba(180, 197, 219, 0.1);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -91,7 +97,7 @@ html, body {
 .app-header {
   height: 62px;
   padding: 0 16px;
-  background: rgba(15, 23, 42, 0.88);
+  background: rgba(38, 58, 71, 0.92);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--card-border);
@@ -111,15 +117,16 @@ html, body {
 .brand-icon {
   width: 36px;
   height: 36px;
-  background: var(--primary-gradient);
+  background: linear-gradient(135deg, #4A5B6A 0%, #728495 100%);
   color: white;
+  border: 1px solid rgba(180, 197, 219, 0.4);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
   font-size: 18px;
-  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
+  box-shadow: 0 4px 14px rgba(38, 58, 71, 0.4);
 }
 
 .brand-title {
@@ -132,7 +139,7 @@ html, body {
 
 .brand-subtitle {
   font-size: 10px;
-  color: var(--accent-cyan);
+  color: var(--canva-slate-100);
   font-weight: 700;
   letter-spacing: 0.3px;
 }
@@ -150,7 +157,7 @@ html, body {
   display: none;
 }
 
-/* Centered & Reduced Width 4-Tab Bottom Navigation Bar */
+/* Centered 4-Tab Fixed Bottom Navigation Bar */
 .fixed-bottom-nav {
   position: absolute;
   bottom: 14px;
@@ -159,16 +166,16 @@ html, body {
   width: 82%;
   max-width: 280px;
   height: 54px;
-  background: rgba(15, 23, 42, 0.92);
+  background: rgba(38, 58, 71, 0.95);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(180, 197, 219, 0.25);
   padding: 4px;
   display: flex;
   align-items: center;
   justify-content: space-around;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
   z-index: 50;
 }
 
@@ -182,7 +189,7 @@ html, body {
   border-radius: var(--radius-pill);
   background: transparent;
   border: none;
-  color: var(--text-muted);
+  color: var(--canva-slate-300);
   font-size: 9px;
   font-weight: 700;
   cursor: pointer;
@@ -192,10 +199,10 @@ html, body {
 }
 
 .nav-item.active {
-  background: var(--primary-gradient);
-  color: white;
+  background: var(--canva-slate-100);
+  color: var(--canva-slate-900);
   font-weight: 800;
-  box-shadow: 0 6px 16px rgba(14, 165, 233, 0.35);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
 }
 
 .nav-item svg {
@@ -205,7 +212,7 @@ html, body {
 
 /* Glass Cards */
 .glass-card {
-  background: var(--card-bg);
+  background: rgba(74, 91, 106, 0.45);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--card-border);
@@ -241,7 +248,7 @@ html, body {
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.6px;
-  color: var(--text-muted);
+  color: var(--canva-slate-100);
   text-transform: uppercase;
 }
 
@@ -254,7 +261,7 @@ html, body {
 
 .metric-sub {
   font-size: 10px;
-  color: var(--text-muted);
+  color: var(--canva-slate-300);
   margin-top: 2px;
 }
 
@@ -295,11 +302,11 @@ html, body {
 
 /* Action Buttons */
 .btn-primary {
-  background: var(--primary-gradient);
+  background: linear-gradient(135deg, #4A5B6A 0%, #728495 100%);
   color: white;
   padding: 12px 20px;
   border-radius: var(--radius-pill);
-  border: none;
+  border: 1px solid rgba(180, 197, 219, 0.3);
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
@@ -307,7 +314,7 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  box-shadow: var(--accent-glow);
+  box-shadow: 0 6px 20px rgba(38, 58, 71, 0.4);
   transition: var(--transition-smooth);
 }
 
@@ -316,11 +323,11 @@ html, body {
 }
 
 .btn-secondary {
-  background: rgba(30, 41, 59, 0.9);
+  background: rgba(74, 91, 106, 0.6);
   color: var(--text-main);
   padding: 7px 14px;
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(180, 197, 219, 0.25);
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
@@ -331,13 +338,13 @@ html, body {
   transform: scale(0.96);
 }
 
-/* Search Bar */
+/* Search Bar (Smooth Keyboard Handling) */
 .search-pill-input {
   width: 100%;
   padding: 11px 14px 11px 38px;
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(180, 197, 219, 0.25);
+  background: rgba(38, 58, 71, 0.85);
   font-size: 12px;
   color: var(--text-main);
   outline: none;
@@ -345,8 +352,8 @@ html, body {
 }
 
 .search-pill-input:focus {
-  border-color: var(--accent-cyan);
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+  border-color: var(--canva-slate-100);
+  box-shadow: 0 0 12px rgba(180, 197, 219, 0.3);
 }
 
 .search-pill-wrapper {
@@ -359,7 +366,7 @@ html, body {
   left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--text-muted);
+  color: var(--canva-slate-300);
 }
 
 /* Student Row Card */
@@ -368,7 +375,7 @@ html, body {
   align-items: center;
   justify-content: space-between;
   padding: 12px 14px;
-  background: var(--card-bg);
+  background: rgba(74, 91, 106, 0.35);
   border-radius: 18px;
   margin-bottom: 8px;
   border: 1px solid var(--card-border);
@@ -378,15 +385,15 @@ html, body {
 
 .student-card-item:active {
   transform: scale(0.97);
-  background: var(--card-bg-hover);
+  background: rgba(74, 91, 106, 0.6);
 }
 
 .student-avatar {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(6, 182, 212, 0.3));
-  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: linear-gradient(135deg, rgba(114, 132, 149, 0.4), rgba(180, 197, 219, 0.3));
+  border: 1px solid rgba(180, 197, 219, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -402,7 +409,7 @@ html, body {
   display: block;
   font-size: 11px;
   font-weight: 700;
-  color: var(--text-muted);
+  color: var(--canva-slate-100);
   margin-bottom: 5px;
 }
 
@@ -410,21 +417,21 @@ html, body {
   width: 100%;
   padding: 10px 14px;
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(180, 197, 219, 0.25);
+  background: rgba(38, 58, 71, 0.8);
   font-size: 12px;
   color: var(--text-main);
   outline: none;
 }
 
 .form-control:focus {
-  border-color: var(--accent-cyan);
+  border-color: var(--canva-slate-100);
 }
 
 /* Formula Box */
 .formula-box {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.12), rgba(15, 23, 42, 0.8));
-  border-left: 3px solid var(--accent-cyan);
+  background: linear-gradient(135deg, rgba(114, 132, 149, 0.25), rgba(38, 58, 71, 0.8));
+  border-left: 3px solid var(--canva-slate-100);
   border-radius: 14px;
   padding: 12px 14px;
   margin: 12px 0;
@@ -433,13 +440,13 @@ html, body {
 .formula-title {
   font-size: 11px;
   font-weight: 800;
-  color: var(--accent-cyan);
+  color: var(--canva-slate-100);
   margin-bottom: 3px;
 }
 
 .formula-text {
   font-size: 10px;
-  color: var(--text-muted);
+  color: var(--canva-slate-300);
   line-height: 1.4;
 }
 
@@ -450,7 +457,7 @@ html, body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(11, 19, 43, 0.75);
+  background: rgba(30, 45, 56, 0.75);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   display: flex;
@@ -459,8 +466,8 @@ html, body {
 }
 
 .modal-content {
-  background: #1E293B;
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  background: #263A47;
+  border-top: 1px solid rgba(180, 197, 219, 0.3);
   border-top-left-radius: 28px;
   border-top-right-radius: 28px;
   width: 100%;
@@ -511,9 +518,9 @@ html, body {
   justify-content: space-between;
   padding: 10px 12px;
   border-radius: 14px;
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(74, 91, 106, 0.4);
   margin-bottom: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(180, 197, 219, 0.15);
   font-size: 11px;
 }
 
