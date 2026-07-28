@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <!-- Instant Disable Zoom & Native Viewport -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Anshu Coaching Classes</title>
-  <meta name="description" content="Anshu Coaching Classes Fees Management System.">
+  <title>Anshu Coaching Classes - Fee Management Portal</title>
+  <meta name="description" content="Anshu Coaching Classes VIP Fees Management System.">
 
   <!-- PWA Manifest & Instant Launch Meta Tags -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#0F172A">
+  <meta name="theme-color" content="#06271A">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -42,13 +42,13 @@
         <div class="brand-badge">
           <div class="brand-icon">A</div>
           <div>
-            <h1 class="brand-title">Anshu Coaching</h1>
-            <div class="brand-subtitle">Fees Management</div>
+            <h1 class="brand-title">Anshu Coaching Classes</h1>
+            <div class="brand-subtitle">VIP Fee Management Portal ✨</div>
           </div>
         </div>
         <div class="header-actions" style="display:flex; gap:6px;">
-          <button class="btn-secondary" style="padding:6px 12px; font-size:11px;" onclick="openModal('add-student')">+ Student</button>
-          <button class="btn-secondary" style="padding:6px 12px; font-size:11px; color:var(--status-overdue-text); border-color:var(--status-overdue-border);" onclick="handleAdminLogout()">🚪 Exit</button>
+          <button class="btn-secondary" style="padding:6px 10px; font-size:10px;" onclick="openModal('add-student')">+ Student</button>
+          <button class="btn-secondary" style="padding:6px 8px; font-size:10px; color:var(--status-overdue-text); border-color:var(--status-overdue-border);" onclick="handleAdminLogout()">🚪 Exit</button>
         </div>
       </header>
 
@@ -58,33 +58,31 @@
       <!-- Centered 4-Tab Fixed Bottom Navigation Bar -->
       <nav class="fixed-bottom-nav">
         <button class="nav-item active" onclick="switchTab('dashboard')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-          <span>Dash</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/></svg>
+          Dashboard
         </button>
-
         <button class="nav-item" onclick="switchTab('students')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          <span>Students</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Students
         </button>
-
         <button class="nav-item" onclick="switchTab('collect')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-          <span>Collect</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+          Collect
         </button>
-
         <button class="nav-item" onclick="switchTab('calendar')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
-          <span>Calendar</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Calendar
         </button>
       </nav>
-
-      <!-- Modal Container -->
-      <div id="modal-container"></div>
 
     </div>
   </div>
 
-  <!-- Application Script -->
+  <!-- Global Modal & Bottom Sheet Container -->
+  <div id="modal-container"></div>
+
+  <!-- Core Financial Engine & UI Application Script -->
   <script type="module" src="app.js"></script>
+
 </body>
 </html>
