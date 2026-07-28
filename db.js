@@ -160,11 +160,10 @@ const INITIAL_EXTRA_CHARGES = [
   {
     id: 201,
     student_id: 1,
-    title: 'Notebook / Rough Book',
+    item_name: 'Rough Book',
     amount: 50,
     date: '2026-05-15',
-    status: 'Paid',
-    paid_with_fee: true
+    status: 'Paid'
   }
 ];
 
@@ -243,7 +242,7 @@ class DBService {
     return true;
   }
 
-  // --- Payments CRUD & Recent Receipts ---
+  // --- Payments & Receipts (Strict: No receipt if paid_amount <= 0 without extra items) ---
   getPayments() {
     return JSON.parse(localStorage.getItem(STORAGE_KEYS.PAYMENTS) || '[]');
   }
@@ -277,15 +276,25 @@ class DBService {
   }
 
   recordPayment(paymentData) {
+    const paidAmt = Number(paymentData.paid_amount || 0);
+    const extraItemAmt = Number(paymentData.extra_charge_amount || 0);
+
+    // Rule 1: DO NOT create a receipt if total paid amount is 0 and no extra items!
+    if (paidAmt <= 0 && extraItemAmt <= 0) {
+      return null;
+    }
+
     const payments = this.getPayments();
     const newPayment = {
       ...paymentData,
       id: Date.now(),
       student_id: Number(paymentData.student_id),
       monthly_fee: Number(paymentData.monthly_fee),
-      paid_amount: Number(paymentData.paid_amount),
+      paid_amount: paidAmt,
       remaining_amount: Number(paymentData.remaining_amount || 0),
       advance_amount: Number(paymentData.advance_amount || 0),
+      extra_item_name: paymentData.extra_item_name || '',
+      extra_charge_amount: extraItemAmt,
       year: Number(paymentData.year),
       payment_mode: paymentData.payment_mode || 'Cash',
       payment_date: paymentData.payment_date || new Date().toISOString()
@@ -295,7 +304,7 @@ class DBService {
     return newPayment;
   }
 
-  // --- Financial Engine with Intuitive Enrollment Grace Period & Cycle Engine ---
+  // --- Financial Engine with Multi-Month Cycle Expiry & Renewal Dates ---
   calculateStudentFinancials(studentId, referenceDate = new Date()) {
     const student = this.getStudentById(studentId);
     if (!student) return null;
@@ -307,8 +316,6 @@ class DBService {
     const refDay = referenceDate.getDate();
 
     const joiningDay = joiningDate.getDate();
-
-    // Months elapsed since joining
     const monthsElapsed = (refYear - joiningDate.getFullYear()) * 12 + (refMonthIdx - joiningDate.getMonth());
 
     const billingMonths = [];
@@ -320,7 +327,6 @@ class DBService {
       const isCurrentMonthCycleComplete = (startY === refYear && startM === refMonthIdx && refDay > joiningDay);
       const isEnrollmentDay = (monthsElapsed === 0 && refDay === joiningDay);
 
-      // Include in billing ledger if past month, or cycle complete, or enrollment baseline
       if (isPastMonth || isCurrentMonthCycleComplete || isEnrollmentDay) {
         billingMonths.push({
           year: startY,
@@ -341,6 +347,10 @@ class DBService {
 
     const advanceBalance = Math.max(0, totalPaidPool - totalAccumulatedFee);
     const totalCurrentDue = Math.max(0, totalAccumulatedFee - totalPaidPool);
+
+    // Multi-Month Cycle Paid Until & Renewal Calculation
+    const fullMonthsPaidCount = Math.floor(totalPaidPool / student.monthly_fee);
+    const cycleInfo = this.calculateCyclePaidUntilDate(student.joining_date, fullMonthsPaidCount);
 
     let remainingPaidPool = totalPaidPool;
 
@@ -390,7 +400,6 @@ class DBService {
     if (totalCurrentDue === 0) {
       dueStatus = 'PAID';
     } else {
-      // Newly enrolled today -> Status is UPCOMING (1st month fee due next month anniversary), NOT Overdue alert!
       if (monthsElapsed === 0 && refDay <= joiningDay) {
         dueStatus = 'UPCOMING';
       } else if (refDay === joiningDay) {
@@ -409,6 +418,9 @@ class DBService {
       billingMonths: monthDetails,
       totalAccumulatedFee,
       totalPaidPool,
+      fullMonthsPaidCount,
+      cyclePaidUntil: cycleInfo.paidUntilStr,
+      cycleNextRenewal: cycleInfo.renewalStr,
       advanceBalance,
       currentArrears: Math.max(0, totalCurrentDue - (currentMonthDetail ? currentMonthDetail.baseFee : 0)),
       currentMonthPayable: totalCurrentDue,
@@ -416,6 +428,30 @@ class DBService {
       currentMonthRemaining: totalCurrentDue,
       totalCurrentDue,
       dueStatus
+    };
+  }
+
+  calculateCyclePaidUntilDate(joiningDateStr, monthsPaid) {
+    if (!joiningDateStr) return { paidUntilStr: '', renewalStr: '' };
+    const j = new Date(joiningDateStr);
+    let y = j.getFullYear();
+    let m = j.getMonth() + monthsPaid;
+    while (m > 11) {
+      m -= 12;
+      y += 1;
+    }
+    const day = j.getDate();
+
+    // Clamp day to max days in month
+    const maxDays = new Date(y, m + 1, 0).getDate();
+    const renewalDay = Math.min(day, maxDays);
+
+    const renewalDate = new Date(y, m, renewalDay);
+    const paidUntilDate = new Date(renewalDate.getTime() - 86400000); // 1 day before renewal
+
+    return {
+      paidUntilStr: this.formatDisplayDate(paidUntilDate.toISOString()),
+      renewalStr: this.formatDisplayDate(renewalDate.toISOString())
     };
   }
 

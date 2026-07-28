@@ -458,7 +458,7 @@ function renderStatusBadge(status, dueAmount) {
   }
 }
 
-// --- 3. Collect Fees View + Recent Receipts Log ---
+// --- 3. Collect Fees View + Stationery Extra Charges Preset Chips ---
 function renderCollectFeesView(students) {
   const activeStudents = students.filter(s => s.status === 'Active' || (s.status === 'Left' && db.calculateStudentFinancials(s.id).totalCurrentDue > 0));
   const selectedStudent = selectedStudentForCollect ? db.getStudentById(selectedStudentForCollect) : activeStudents[0];
@@ -497,7 +497,7 @@ function renderCollectFeesView(students) {
               <div style="font-weight:700; font-size:12px; color:var(--status-overdue-text);">₹${fin.currentArrears}</div>
             </div>
             <div style="grid-column: span 2; margin-top:2px;">
-              <span style="font-size:9px; color:var(--emerald-600);">Total Payable:</span>
+              <span style="font-size:9px; color:var(--emerald-600);">Total Fee Payable:</span>
               <div style="font-size:16px; font-weight:800; color:var(--emerald-950);">₹${fin.totalCurrentDue}</div>
             </div>
           </div>
@@ -517,8 +517,30 @@ function renderCollectFeesView(students) {
           </div>
 
           <div class="form-group">
-            <label class="form-label">Paying Amount (₹)</label>
-            <input type="number" name="paid_amount" class="form-control" value="${fin.totalCurrentDue}" required />
+            <label class="form-label">Paying Fee Amount (₹)</label>
+            <input type="number" name="paid_amount" class="form-control" value="${fin.totalCurrentDue}" min="0" required />
+          </div>
+
+          <!-- Admin Extra Charges Section (Stationery / Stuff) -->
+          <div class="form-group" style="padding:10px; background:var(--emerald-50); border:1px dashed var(--card-border); border-radius:14px; margin-bottom:12px;">
+            <label class="form-label" style="color:var(--emerald-950); display:flex; justify-content:space-between; align-items:center;">
+              <span>🛍️ Add Extra Charges / Stationery (Optional)</span>
+              <span style="font-size:9px; color:var(--emerald-600);">Rough book, Pen, Copy, etc.</span>
+            </label>
+
+            <!-- Quick Presets -->
+            <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px;">
+              <button type="button" class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="applyStationeryPreset('Rough Book', 50)">📘 Rough Book (₹50)</button>
+              <button type="button" class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="applyStationeryPreset('Copy', 40)">📓 Copy (₹40)</button>
+              <button type="button" class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="applyStationeryPreset('Pen', 10)">🖊️ Pen (₹10)</button>
+              <button type="button" class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="applyStationeryPreset('Pouch', 60)">🎒 Pouch (₹60)</button>
+              <button type="button" class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="applyStationeryPreset('Notes', 100)">📚 Notes (₹100)</button>
+            </div>
+
+            <div style="display:grid; grid-template-columns:2fr 1fr; gap:6px;">
+              <input type="text" id="extra_item_name" name="extra_item_name" class="form-control" placeholder="Item Name (e.g. Rough Book)" />
+              <input type="number" id="extra_charge_amount" name="extra_charge_amount" class="form-control" placeholder="Amt (₹)" min="0" value="0" />
+            </div>
           </div>
 
           <div class="form-group">
@@ -548,10 +570,13 @@ function renderCollectFeesView(students) {
           <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:12px; margin-bottom:6px; font-size:11px;">
             <div>
               <strong style="color:var(--emerald-950);">${p.student.name}</strong> (${p.student.class})
-              <div style="font-size:9px; color:var(--emerald-600);">${p.month} ${p.year} • ${db.formatDisplayDate(p.payment_date)} (${p.payment_mode})</div>
+              <div style="font-size:9px; color:var(--emerald-600);">
+                ${p.month} ${p.year} • ${db.formatDisplayDate(p.payment_date)} (${p.payment_mode})
+                ${p.extra_item_name ? ' • Extra: ' + p.extra_item_name + ' (₹' + p.extra_charge_amount + ')' : ''}
+              </div>
             </div>
             <div style="text-align:right; display:flex; align-items:center; gap:8px;">
-              <strong style="color:#254B33; font-size:12px;">₹${p.paid_amount}</strong>
+              <strong style="color:#254B33; font-size:12px;">₹${p.paid_amount + (p.extra_charge_amount || 0)}</strong>
               <button class="btn-secondary" style="padding:3px 8px; font-size:9px;" onclick="openModal('receipt', ${p.id})">🧾 Receipt</button>
             </div>
           </div>
@@ -562,6 +587,15 @@ function renderCollectFeesView(students) {
     </div>
   `;
 }
+
+window.applyStationeryPreset = function(itemName, price) {
+  const nameInput = document.getElementById('extra_item_name');
+  const priceInput = document.getElementById('extra_charge_amount');
+  if (nameInput && priceInput) {
+    nameInput.value = itemName;
+    priceInput.value = price;
+  }
+};
 
 window.onStudentSelectForCollect = function(studentId) {
   selectedStudentForCollect = studentId;
@@ -574,8 +608,18 @@ window.handleFeeCollection = function(event) {
   const studentId = form.student_id.value;
   const month = form.month.value;
   const year = form.year.value;
-  const paidAmount = Number(form.paid_amount.value);
+  const paidAmount = Number(form.paid_amount.value || 0);
+  const extraItemName = form.extra_item_name ? form.extra_item_name.value.trim() : '';
+  const extraChargeAmount = form.extra_charge_amount ? Number(form.extra_charge_amount.value || 0) : 0;
   const paymentMode = form.payment_mode.value;
+
+  const totalCollection = paidAmount + extraChargeAmount;
+
+  // STRICT RULE 1: Do NOT generate a receipt if total collection amount is 0!
+  if (totalCollection <= 0) {
+    alert('⚠️ Cannot generate receipt for ₹0 collection. Please enter a valid payment amount or extra charges.');
+    return;
+  }
 
   const fin = db.calculateStudentFinancials(studentId);
   const totalPayable = fin.totalCurrentDue;
@@ -599,6 +643,8 @@ window.handleFeeCollection = function(event) {
     paid_amount: paidAmount,
     remaining_amount: remaining,
     advance_amount: advance,
+    extra_item_name: extraItemName,
+    extra_charge_amount: extraChargeAmount,
     payment_mode: paymentMode,
     payment_date: new Date().toISOString()
   });
@@ -619,16 +665,13 @@ function renderCalendarView(students) {
   const currentMonthName = MONTH_NAMES[calendarViewMonthIdx];
   const isCurrentLiveMonth = (calendarViewYear === new Date().getFullYear() && calendarViewMonthIdx === new Date().getMonth());
 
-  // Filter students joining or paying on selected day/month for the dual panels below
   const selectedDay = selectedCalendarDay || (isCurrentLiveMonth ? new Date().getDate() : 1);
   
-  // Panel 1: Students Joining Anniversary Record
   const joiningStudents = students.filter(s => {
     const d = new Date(s.joining_date);
     return d.getDate() === selectedDay;
   });
 
-  // Panel 2: Daily Fee Activity Log
   const allPayments = db.getPayments();
   const studentMap = {};
   students.forEach(s => { studentMap[s.id] = s; });
@@ -643,7 +686,6 @@ function renderCalendarView(students) {
 
   return `
     <div class="glass-card">
-      <!-- Calendar Navigation Bar -->
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <button class="btn-secondary" style="padding:4px 10px; font-size:11px;" onclick="navigateCalendarMonth(-1)">◀ Prev</button>
         <div style="text-align:center;">
@@ -667,7 +709,7 @@ function renderCalendarView(students) {
     
     <!-- PANEL 1: Joining Anniversary Register -->
     <div class="glass-card" style="margin-bottom:10px;">
-      <h4 style="font-size:12px; font-weight:800; color:var(--emerald-950); margin-bottom:6px; display:flex; justify-space-between; align-items:center;">
+      <h4 style="font-size:12px; font-weight:800; color:var(--emerald-950); margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
         <span>🎯 Joining Anniversary Register (${currentMonthName} ${selectedDay})</span>
         <span style="font-size:9px; color:var(--emerald-600);">${joiningStudents.length} Student(s)</span>
       </h4>
@@ -700,7 +742,7 @@ function renderCalendarView(students) {
               <div style="font-size:9px; color:var(--emerald-600);">${p.month} ${p.year} • Mode: ${p.payment_mode}</div>
             </div>
             <div style="text-align:right; display:flex; align-items:center; gap:6px;">
-              <strong style="color:#254B33; font-size:12px;">₹${p.paid_amount}</strong>
+              <strong style="color:#254B33; font-size:12px;">₹${p.paid_amount + (p.extra_charge_amount || 0)}</strong>
               <button class="btn-secondary" style="padding:3px 7px; font-size:9px;" onclick="openModal('receipt', ${p.id})">🧾 Receipt</button>
             </div>
           </div>
@@ -987,7 +1029,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 4: Student Profile Drawer (With Advance Balance & Receipt History Audit!)
+  // Modal 4: Student Profile Drawer (Cycle Expiry & Renewal Dates + Receipt History)
   else if (activeModal === 'student-profile' && profileStudentId) {
     const fin = db.calculateStudentFinancials(profileStudentId);
     if (!fin) return;
@@ -1014,7 +1056,8 @@ function renderActiveModal() {
             </div>
           </div>
 
-          <div class="formula-box" style="margin-top:4px; margin-bottom:12px; ${isLeft && fin.totalCurrentDue > 0 ? 'background:rgba(254,242,242,0.95); border-left-color:#DC2626;' : ''}">
+          <!-- Total Dues Card -->
+          <div class="formula-box" style="margin-top:4px; margin-bottom:8px; ${isLeft && fin.totalCurrentDue > 0 ? 'background:rgba(254,242,242,0.95); border-left-color:#DC2626;' : ''}">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
                 <span style="font-size:10px; color:var(--emerald-600);">Monthly Fee: ₹${fin.student.monthly_fee} • Joined: ${fin.student.joining_date}</span>
@@ -1033,9 +1076,21 @@ function renderActiveModal() {
             ` : ''}
           </div>
 
+          <!-- Cycle Expiry & Next Renewal Highlight Card -->
+          <div style="padding:8px 10px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:12px; margin-bottom:10px; font-size:10px; display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+            <div>
+              <span style="color:var(--emerald-600); font-weight:700;">🗓️ Active Cycle Paid Until:</span>
+              <div style="font-weight:800; color:var(--emerald-950); font-size:11px;">${fin.cyclePaidUntil || 'None (Unpaid)'}</div>
+            </div>
+            <div>
+              <span style="color:var(--emerald-600); font-weight:700;">⏳ Next Dues Renewal Date:</span>
+              <div style="font-weight:800; color:#DC2626; font-size:11px;">${fin.cycleNextRenewal || 'Immediate'}</div>
+            </div>
+          </div>
+
           <!-- Section A: Month-by-Month Baseline Audit -->
           <h4 style="font-size:11px; font-weight:800; color:var(--emerald-800); margin-bottom:6px;">Month-by-Month Baseline Status</h4>
-          <div style="max-height:120px; overflow-y:auto; margin-bottom:12px;">
+          <div style="max-height:110px; overflow-y:auto; margin-bottom:10px;">
             ${fin.billingMonths.map(bm => `
               <div class="month-pending-row">
                 <div>
@@ -1054,12 +1109,15 @@ function renderActiveModal() {
 
           <!-- Section B: Payment Transaction & Digital Receipt History -->
           <h4 style="font-size:11px; font-weight:800; color:var(--emerald-800); margin-bottom:6px;">Payment Receipts & Transaction Log 🧾</h4>
-          <div style="max-height:130px; overflow-y:auto; margin-bottom:12px;">
+          <div style="max-height:120px; overflow-y:auto; margin-bottom:12px;">
             ${studentPayments.length > 0 ? studentPayments.map(p => `
               <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 10px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:10px; margin-bottom:4px; font-size:10px;">
                 <div>
-                  <strong style="color:var(--emerald-950);">₹${p.paid_amount} Paid</strong> (${p.payment_mode})
-                  <div style="font-size:9px; color:var(--emerald-600);">${p.month} ${p.year} • Date: ${db.formatDisplayDate(p.payment_date)}</div>
+                  <strong style="color:var(--emerald-950);">₹${p.paid_amount + (p.extra_charge_amount || 0)} Paid</strong> (${p.payment_mode})
+                  <div style="font-size:9px; color:var(--emerald-600);">
+                    ${p.month} ${p.year} • Date: ${db.formatDisplayDate(p.payment_date)}
+                    ${p.extra_item_name ? ' • Extra: ' + p.extra_item_name + ' (₹' + p.extra_charge_amount + ')' : ''}
+                  </div>
                 </div>
                 <button class="btn-secondary" style="padding:3px 7px; font-size:9px;" onclick="openModal('receipt', ${p.id})">🧾 View Receipt</button>
               </div>
@@ -1175,6 +1233,8 @@ function renderActiveModal() {
 
   // Modal 7: Digital Receipt Sheet
   else if (activeModal === 'receipt' && receiptData) {
+    const totalCollected = receiptData.payment.paid_amount + (receiptData.payment.extra_charge_amount || 0);
+
     container.innerHTML = `
       <div class="modal-overlay" onclick="closeModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
@@ -1194,7 +1254,15 @@ function renderActiveModal() {
               <span>Payment Date:</span><strong style="color:var(--emerald-950);">${db.formatDisplayDate(receiptData.payment.payment_date)} (${receiptData.payment.payment_mode})</strong>
             </div>
             <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
-              <span>Paid Amount:</span><strong style="font-size:13px; color:#254B33;">₹${receiptData.payment.paid_amount}</strong>
+              <span>Coaching Fee Paid:</span><strong>₹${receiptData.payment.paid_amount}</strong>
+            </div>
+            ${receiptData.payment.extra_item_name ? `
+              <div style="display:flex; justify-content:space-between; margin-bottom:4px; color:var(--emerald-800);">
+                <span>Extra (${receiptData.payment.extra_item_name}):</span><strong>₹${receiptData.payment.extra_charge_amount}</strong>
+              </div>
+            ` : ''}
+            <div style="display:flex; justify-content:space-between; margin-bottom:4px; padding-top:4px; border-top:1px dashed var(--card-border);">
+              <span>Total Received:</span><strong style="font-size:13px; color:#254B33;">₹${totalCollected}</strong>
             </div>
             <div style="display:flex; justify-content:space-between;">
               <span>Remaining Balance:</span><strong>₹${receiptData.remainingArrears || 0}</strong>
