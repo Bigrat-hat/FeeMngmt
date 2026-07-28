@@ -201,8 +201,12 @@ window.closeModal = function() {
   renderActiveModal();
 };
 
-// --- 1. Dashboard View ---
+// --- 1. Dashboard View (Real-Time Dynamic Month & Year) ---
 function renderDashboardView(metrics) {
+  const now = new Date();
+  const currentMonthName = MONTH_NAMES[now.getMonth()];
+  const currentYear = now.getFullYear();
+
   return `
     <!-- 2x2 Metric Grid -->
     <div class="metrics-grid-2x2">
@@ -215,13 +219,13 @@ function renderDashboardView(metrics) {
       <div class="glass-card metric-card-compact">
         <div class="metric-lbl">THIS MONTH</div>
         <div class="metric-val">₹${metrics.thisMonthCollection}</div>
-        <div class="metric-sub">July Collection</div>
+        <div class="metric-sub">${currentMonthName} Collection</div>
       </div>
 
       <div class="glass-card metric-card-compact">
         <div class="metric-lbl">THIS YEAR</div>
         <div class="metric-val">₹${metrics.thisYearCollection}</div>
-        <div class="metric-sub">Fiscal YTD</div>
+        <div class="metric-sub">Fiscal YTD (${currentYear})</div>
       </div>
 
       <!-- Clickable Pending Dues Card -->
@@ -292,7 +296,7 @@ function renderDashboardView(metrics) {
 
     <!-- Collection Trend Chart -->
     <div class="glass-card">
-      <h3 style="font-size:13px; font-weight:800; color:var(--emerald-950); margin-bottom:8px;">Revenue Collection Trend (2026)</h3>
+      <h3 style="font-size:13px; font-weight:800; color:var(--emerald-950); margin-bottom:8px;">Revenue Collection Trend (${currentYear})</h3>
       <div style="height:160px;">
         <canvas id="revenueTrendChart"></canvas>
       </div>
@@ -304,7 +308,8 @@ function initDashboardCharts() {
   const trendCtx = document.getElementById('revenueTrendChart');
   if (!trendCtx) return;
 
-  const trendData = db.getMonthlyRevenueTrend(2026);
+  const currentYear = new Date().getFullYear();
+  const trendData = db.getMonthlyRevenueTrend(currentYear);
 
   new Chart(trendCtx, {
     type: 'bar',
@@ -337,7 +342,7 @@ function initDashboardCharts() {
   });
 }
 
-// --- 2. Students Directory View (Cleaned: Only Status Badge on Right) ---
+// --- 2. Students Directory View ---
 function renderStudentsView(students) {
   return `
     <!-- Search Pill -->
@@ -418,11 +423,15 @@ function renderStatusBadge(status, dueAmount) {
   }
 }
 
-// --- 3. Collect Fees View ---
+// --- 3. Collect Fees View (Real-time Month & Year Defaults) ---
 function renderCollectFeesView(students) {
   const activeStudents = students.filter(s => s.status === 'Active');
   const selectedStudent = selectedStudentForCollect ? db.getStudentById(selectedStudentForCollect) : activeStudents[0];
   const fin = selectedStudent ? db.calculateStudentFinancials(selectedStudent.id) : null;
+
+  const now = new Date();
+  const currentMonthName = MONTH_NAMES[now.getMonth()];
+  const currentYear = now.getFullYear();
 
   return `
     <div class="glass-card">
@@ -464,9 +473,9 @@ function renderCollectFeesView(students) {
             <label class="form-label">Month & Year</label>
             <div style="display:flex; gap:8px;">
               <select name="month" class="form-control" style="flex:2;">
-                ${MONTH_NAMES.map(m => `<option value="${m}" ${m === 'July' ? 'selected' : ''}>${m}</option>`).join('')}
+                ${MONTH_NAMES.map(m => `<option value="${m}" ${m === currentMonthName ? 'selected' : ''}>${m}</option>`).join('')}
               </select>
-              <input type="number" name="year" class="form-control" value="2026" style="flex:1;" />
+              <input type="number" name="year" class="form-control" value="${currentYear}" style="flex:1;" />
             </div>
           </div>
 
@@ -534,12 +543,16 @@ window.handleFeeCollection = function(event) {
   openModal('receipt');
 };
 
-// --- 4. Interactive Fee Calendar View ---
+// --- 4. REAL-TIME LIVE FEE CALENDAR VIEW ---
 function renderCalendarView(students) {
+  const now = new Date();
+  const currentMonthName = MONTH_NAMES[now.getMonth()];
+  const currentYear = now.getFullYear();
+
   return `
     <div class="glass-card">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <h3 style="font-size:15px; font-weight:800; color:var(--emerald-950);">July 2026 Fee Calendar</h3>
+        <h3 style="font-size:15px; font-weight:800; color:var(--emerald-950);">${currentMonthName} ${currentYear} Fee Calendar</h3>
         <span style="font-size:10px; color:var(--emerald-600); font-weight:700;">💡 Tap date to view dues</span>
       </div>
 
@@ -554,17 +567,27 @@ function renderCalendarView(students) {
 }
 
 function renderCalendarGridDays(students) {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonthIdx = now.getMonth();
+  const todayDateNumber = now.getDate(); // Real-time today's day number!
+
+  // Dynamic calculation of starting day offset and total days in month
+  const firstDayOfWeek = new Date(currentYear, currentMonthIdx, 1).getDay();
+  const totalDaysInMonth = new Date(currentYear, currentMonthIdx + 1, 0).getDate();
+
   let gridHTML = '';
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < firstDayOfWeek; i++) {
     gridHTML += `<div style="height:38px; background:rgba(0,0,0,0.03); border-radius:8px;"></div>`;
   }
-  for (let day = 1; day <= 31; day++) {
-    const isToday = day === 28;
+
+  for (let day = 1; day <= totalDaysInMonth; day++) {
+    const isToday = (day === todayDateNumber); // Real-time Today check!
     const dueStudents = students.filter(s => s.status === 'Active' && new Date(s.joining_date).getDate() === day);
     const hasDue = dueStudents.length > 0;
 
     gridHTML += `
-      <div class="clickable-card" onclick="openModal('calendar-day', ${day})" style="height:38px; background:${isToday ? 'var(--emerald-800)' : hasDue ? 'var(--emerald-200)' : '#FFFFFF'}; color:${isToday ? 'white' : 'var(--emerald-950)'}; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; font-weight:700; border:1px solid rgba(94, 145, 133, 0.15);">
+      <div class="clickable-card" onclick="openModal('calendar-day', ${day})" style="height:38px; background:${isToday ? 'var(--emerald-800)' : hasDue ? 'var(--emerald-200)' : '#FFFFFF'}; color:${isToday ? 'white' : 'var(--emerald-950)'}; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:11px; font-weight:700; border:${isToday ? '2px solid var(--emerald-950)' : '1px solid rgba(94, 145, 133, 0.15)'}; box-shadow:${isToday ? '0 4px 12px rgba(37,75,51,0.3)' : 'none'};">
         <span>${day}</span>
         ${hasDue ? `<span style="width:4px; height:4px; background:${isToday ? '#B5D8C7' : '#254B33'}; border-radius:50%; margin-top:2px;"></span>` : ''}
       </div>
@@ -791,7 +814,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 4: Student Profile Drawer (Chronological Cumulative Audit Display)
+  // Modal 4: Student Profile Drawer
   else if (activeModal === 'student-profile' && profileStudentId) {
     const fin = db.calculateStudentFinancials(profileStudentId);
     if (!fin) return;
@@ -861,17 +884,20 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 5: Calendar Day Details Bottom Sheet
+  // Modal 5: Dynamic Calendar Day Details Bottom Sheet
   else if (activeModal === 'calendar-day' && selectedCalendarDay) {
     const students = db.getStudents();
     const dueStudents = students.filter(s => s.status === 'Active' && new Date(s.joining_date).getDate() === selectedCalendarDay);
+    const now = new Date();
+    const currentMonthName = MONTH_NAMES[now.getMonth()];
+    const currentYear = now.getFullYear();
 
     container.innerHTML = `
       <div class="modal-overlay" onclick="closeModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
           <div class="modal-header">
             <div>
-              <h3 class="modal-title">July ${selectedCalendarDay}, 2026 - Dues Timeline</h3>
+              <h3 class="modal-title">${currentMonthName} ${selectedCalendarDay}, ${currentYear} - Dues Timeline</h3>
               <div style="font-size:10px; color:var(--emerald-600); font-weight:700;">
                 ${dueStudents.length} Student(s) with monthly fee baseline on the ${selectedCalendarDay}th
               </div>
@@ -898,7 +924,7 @@ function renderActiveModal() {
               `;
             }).join('') : `
               <div style="text-align:center; padding:30px 10px; color:var(--emerald-600); font-size:12px;">
-                No recurring student dues scheduled on July ${selectedCalendarDay}.
+                No recurring student dues scheduled on ${currentMonthName} ${selectedCalendarDay}.
               </div>
             `}
           </div>
