@@ -21,16 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
 function initPWA() {
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js')
-      .then(reg => {
-        reg.onupdatefound = () => {
-          const installingWorker = reg.installing;
-          installingWorker.onstatechange = () => {
-            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('New code version found! Ready for refresh.');
-            }
-          };
-        };
-      })
       .catch(err => console.log('PWA ServiceWorker registration notice:', err));
   }
 }
@@ -98,7 +88,7 @@ function renderCurrentTab() {
   renderActiveModal();
 }
 
-// --- Admin Login Screen ---
+// --- Admin Login Screen (Password Only) ---
 function renderAdminLoginView() {
   return `
     <div style="display:flex; flex-direction:column; justify-content:center; min-height:100%; padding:20px 10px;">
@@ -149,13 +139,12 @@ window.handleAdminLoginSubmit = function(e) {
   }
 };
 
-// Handle Exit / Logout with FULL Code Reload & Data Preservation
 window.handleAdminLogout = function() {
-  if (confirm('Exit & Log out from Anshu Coaching Admin Portal?\n\n(Your student data will stay 100% saved, and the latest code version will reload!)')) {
+  if (confirm('Log out from Anshu Coaching Admin Portal?')) {
     isLoggedIn = false;
     localStorage.removeItem('anshu_admin_logged_in');
-    // Hard refresh window to fetch latest code updates from Vercel/Netlify while keeping data intact!
-    window.location.reload();
+    currentTab = 'dashboard';
+    renderCurrentTab();
   }
 };
 
@@ -278,7 +267,7 @@ function initDashboardCharts() {
   });
 }
 
-// --- 2. Students Directory View ---
+// --- 2. Students Directory View (Active, Left & Session Closed) ---
 function renderStudentsView(students) {
   let filtered = students;
   if (searchQuery) {
@@ -589,7 +578,7 @@ function renderActiveModal() {
     `;
   } 
 
-  // Modal 2: Edit Student Modal
+  // Modal 2: Edit Student Modal (Including Status: Active / Left / Session Closed)
   else if (activeModal === 'edit-student' && editStudentId) {
     const student = db.getStudentById(editStudentId);
     if (!student) return;

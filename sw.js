@@ -1,4 +1,4 @@
-const CACHE_NAME = 'anshu-coaching-v3';
+const CACHE_NAME = 'anshu-coaching-v4';
 
 // Force Service Worker to activate immediately on updates
 self.addEventListener('install', (event) => {
@@ -11,7 +11,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         cacheNames.map((cache) => {
           if (cache !== CACHE_NAME) {
-            return caches.delete(cache); // Delete old cached JS/CSS version!
+            return caches.delete(cache); // Delete old cached icons/JS/CSS version!
           }
         })
       );
@@ -19,7 +19,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Network-First strategy: Always fetch latest code updates from Vercel/Netlify first!
+// Network-First strategy: Always fetch latest code and icons from Vercel/Netlify first!
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
