@@ -86,7 +86,7 @@ html, body {
 /* Header Bar */
 .app-header {
   height: 60px;
-  padding: 0 16px;
+  padding: 0 14px;
   background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -101,12 +101,12 @@ html, body {
 .brand-badge {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .brand-icon {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   background: var(--slate-900);
   color: white;
   border-radius: 10px;
@@ -114,11 +114,11 @@ html, body {
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 17px;
+  font-size: 16px;
 }
 
 .brand-title {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 800;
   color: var(--slate-900);
   line-height: 1.1;
@@ -142,14 +142,14 @@ html, body {
   display: none;
 }
 
-/* Centered & Reduced Width Floating Bottom Navigation Bar */
+/* Centered & Reduced Width 4-Tab Bottom Navigation Bar */
 .fixed-bottom-nav {
   position: absolute;
   bottom: 14px;
   left: 50%;
   transform: translateX(-50%);
-  width: 86%;
-  max-width: 320px;
+  width: 80%;
+  max-width: 275px;
   height: 52px;
   background: rgba(38, 58, 71, 0.95);
   backdrop-filter: blur(24px);
@@ -169,7 +169,7 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  padding: 4px 8px;
+  padding: 4px 6px;
   border-radius: var(--radius-pill);
   background: transparent;
   border: none;
@@ -425,7 +425,7 @@ html, body {
   border-top-right-radius: 26px;
   width: 100%;
   padding: 20px 16px 28px 16px;
-  max-height: 75vh; /* Slightly more than half screen! */
+  max-height: 78vh;
   overflow-y: auto;
   box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.25);
   animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
@@ -486,7 +486,7 @@ html, body {
     border: none;
   }
   .fixed-bottom-nav {
-    width: 90%;
-    max-width: 320px;
+    width: 82%;
+    max-width: 275px;
   }
 }

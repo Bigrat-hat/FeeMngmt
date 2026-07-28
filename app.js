@@ -79,9 +79,6 @@ function renderCurrentTab() {
     case 'calendar':
       contentEl.innerHTML = renderCalendarView(students);
       break;
-    case 'settings':
-      contentEl.innerHTML = renderSettingsView();
-      break;
     default:
       contentEl.innerHTML = renderDashboardView(metrics);
       setTimeout(initDashboardCharts, 50);
@@ -287,7 +284,7 @@ function renderStudentsView(students) {
       <input type="text" class="search-pill-input" placeholder="Search student name or class..." value="${searchQuery}" oninput="onStudentSearchInput(event)" />
     </div>
 
-    <p style="font-size:10px; color:var(--slate-500); margin-bottom:8px; text-align:right;">💡 Tap any student to open profile, edit details & fee status</p>
+    <p style="font-size:10px; color:var(--slate-500); margin-bottom:8px; text-align:right;">💡 Tap any student to view profile, edit details or delete</p>
 
     <!-- Student Cards List -->
     <div>
@@ -300,7 +297,7 @@ function renderStudentsView(students) {
               <span class="student-avatar">${avatar}</span>
               <div>
                 <div style="font-size:13px; font-weight:700; color:var(--slate-900);">${s.name}</div>
-                <div style="font-size:10px; color:var(--slate-500);">${s.class} • ₹${s.monthly_fee}/mo</div>
+                <div style="font-size:10px; color:var(--slate-500);">${s.class} • ₹${s.monthly_fee}/mo ${s.school ? '• ' + s.school : ''}</div>
               </div>
             </div>
             <div style="text-align:right;">
@@ -484,26 +481,6 @@ function renderCalendarGridDays(students) {
   return gridHTML;
 }
 
-// --- 5. Settings View ---
-function renderSettingsView() {
-  return `
-    <div class="glass-card">
-      <h3 style="font-size:15px; font-weight:800; color:var(--slate-900); margin-bottom:10px;">Anshu Coaching Settings</h3>
-      <p style="font-size:11px; color:var(--slate-500); margin-bottom:14px;">Classes: Class 1 to Class 10</p>
-
-      <div style="margin-bottom:10px;">
-        <button class="btn-secondary" style="width:100%; padding:10px;" onclick="handleAdminLogout()">
-          🔒 Logout Admin Session
-        </button>
-      </div>
-
-      <button class="btn-secondary" style="width:100%; border-color:var(--status-overdue-text); color:var(--status-overdue-text); padding:10px;" onclick="resetDemoData()">
-        ⚠️ Reset Demo Dataset
-      </button>
-    </div>
-  `;
-}
-
 // --- Modal & Bottom Sheet Renderer ---
 function renderActiveModal() {
   const container = document.getElementById('modal-container');
@@ -514,7 +491,7 @@ function renderActiveModal() {
     return;
   }
 
-  // Modal 1: Add Student
+  // Modal 1: Add Student (With Optional School Name & Board Selector)
   if (activeModal === 'add-student') {
     container.innerHTML = `
       <div class="modal-overlay" onclick="closeModal()">
@@ -531,8 +508,8 @@ function renderActiveModal() {
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
               <div class="form-group">
-                <label class="form-label">Gender</label>
-                <select name="gender" class="form-control">
+                <label class="form-label">Gender *</label>
+                <select name="gender" class="form-control" required>
                   <option value="Male">Male 👦</option>
                   <option value="Female">Female 👧</option>
                 </select>
@@ -540,28 +517,37 @@ function renderActiveModal() {
               <div class="form-group">
                 <label class="form-label">Class (1st to 10th) *</label>
                 <select name="class" class="form-control" required>
-                  <option value="Class 1">Class 1</option>
-                  <option value="Class 2">Class 2</option>
-                  <option value="Class 3">Class 3</option>
-                  <option value="Class 4">Class 4</option>
-                  <option value="Class 5">Class 5</option>
-                  <option value="Class 6">Class 6</option>
-                  <option value="Class 7">Class 7</option>
-                  <option value="Class 8">Class 8</option>
-                  <option value="Class 9">Class 9</option>
-                  <option value="Class 10" selected>Class 10</option>
+                  ${[1,2,3,4,5,6,7,8,9,10].map(c => `<option value="Class ${c}" ${c===10?'selected':''}>Class ${c}</option>`).join('')}
                 </select>
               </div>
             </div>
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
               <div class="form-group">
-                <label class="form-label">Monthly Fee (₹)</label>
+                <label class="form-label">Monthly Fee (₹) *</label>
                 <input type="number" name="monthly_fee" class="form-control" required value="300" />
               </div>
               <div class="form-group">
-                <label class="form-label">Joining Date baseline</label>
+                <label class="form-label">Joining Date *</label>
                 <input type="date" name="joining_date" class="form-control" required value="2026-05-01" />
+              </div>
+            </div>
+
+            <!-- Optional School & Board -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div class="form-group">
+                <label class="form-label">School Name (Optional)</label>
+                <input type="text" name="school" class="form-control" placeholder="e.g. St. Xavier" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Board (Optional)</label>
+                <select name="board" class="form-control">
+                  <option value="">None / Select</option>
+                  <option value="CBSE">CBSE</option>
+                  <option value="ICSE">ICSE</option>
+                  <option value="State Board">State Board</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
             </div>
 
@@ -572,7 +558,7 @@ function renderActiveModal() {
     `;
   } 
 
-  // Modal 2: Edit Student Modal
+  // Modal 2: Edit Student Modal (With Optional School & Board)
   else if (activeModal === 'edit-student' && editStudentId) {
     const student = db.getStudentById(editStudentId);
     if (!student) return;
@@ -594,14 +580,14 @@ function renderActiveModal() {
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
               <div class="form-group">
-                <label class="form-label">Gender</label>
+                <label class="form-label">Gender *</label>
                 <select name="gender" class="form-control">
                   <option value="Male" ${student.gender === 'Male' ? 'selected' : ''}>Male 👦</option>
                   <option value="Female" ${student.gender === 'Female' ? 'selected' : ''}>Female 👧</option>
                 </select>
               </div>
               <div class="form-group">
-                <label class="form-label">Class</label>
+                <label class="form-label">Class *</label>
                 <select name="class" class="form-control" required>
                   ${[1,2,3,4,5,6,7,8,9,10].map(c => `
                     <option value="Class ${c}" ${student.class === 'Class ' + c ? 'selected' : ''}>Class ${c}</option>
@@ -612,12 +598,30 @@ function renderActiveModal() {
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
               <div class="form-group">
-                <label class="form-label">Monthly Fee (₹)</label>
+                <label class="form-label">Monthly Fee (₹) *</label>
                 <input type="number" name="monthly_fee" class="form-control" required value="${student.monthly_fee}" />
               </div>
               <div class="form-group">
-                <label class="form-label">Joining Date</label>
+                <label class="form-label">Joining Date *</label>
                 <input type="date" name="joining_date" class="form-control" required value="${student.joining_date}" />
+              </div>
+            </div>
+
+            <!-- Optional School Name & Board -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+              <div class="form-group">
+                <label class="form-label">School Name (Optional)</label>
+                <input type="text" name="school" class="form-control" value="${student.school || ''}" placeholder="e.g. DPS" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Board (Optional)</label>
+                <select name="board" class="form-control">
+                  <option value="">None / Select</option>
+                  <option value="CBSE" ${student.board === 'CBSE' ? 'selected' : ''}>CBSE</option>
+                  <option value="ICSE" ${student.board === 'ICSE' ? 'selected' : ''}>ICSE</option>
+                  <option value="State Board" ${student.board === 'State Board' ? 'selected' : ''}>State Board</option>
+                  <option value="Other" ${student.board === 'Other' ? 'selected' : ''}>Other</option>
+                </select>
               </div>
             </div>
 
@@ -645,7 +649,7 @@ function renderActiveModal() {
               <span class="student-avatar" style="width:42px; height:42px; font-size:20px;">${avatar}</span>
               <div>
                 <h3 class="modal-title">${fin.student.name}</h3>
-                <div style="font-size:11px; color:var(--slate-500);">${fin.student.class} • Joining: ${fin.student.joining_date}</div>
+                <div style="font-size:10px; color:var(--slate-500);">${fin.student.class} ${fin.student.board ? '• ' + fin.student.board : ''} ${fin.student.school ? '• ' + fin.student.school : ''}</div>
               </div>
             </div>
             <div style="display:flex; gap:6px;">
@@ -657,16 +661,16 @@ function renderActiveModal() {
           <div class="formula-box" style="margin-top:4px; margin-bottom:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
-                <span style="font-size:10px; color:var(--slate-500);">Monthly Fee: ₹${fin.student.monthly_fee}</span>
-                <div style="font-size:16px; font-weight:800; color:var(--slate-900);">Total Outstanding Dues</div>
+                <span style="font-size:10px; color:var(--slate-500);">Monthly Fee: ₹${fin.student.monthly_fee} • Joined: ${fin.student.joining_date}</span>
+                <div style="font-size:15px; font-weight:800; color:var(--slate-900);">Total Outstanding Dues</div>
               </div>
               <div style="font-size:20px; font-weight:800; color:var(--status-overdue-text);">₹${fin.totalCurrentDue}</div>
             </div>
           </div>
 
-          <h4 style="font-size:12px; font-weight:800; color:var(--slate-700); margin-bottom:8px;">Month-by-Month Fee Audit</h4>
+          <h4 style="font-size:11px; font-weight:800; color:var(--slate-700); margin-bottom:6px;">Month-by-Month Fee Audit</h4>
           
-          <div style="max-height:200px; overflow-y:auto; margin-bottom:14px;">
+          <div style="max-height:180px; overflow-y:auto; margin-bottom:12px;">
             ${fin.billingMonths.map(bm => `
               <div class="month-pending-row">
                 <div>
@@ -684,10 +688,10 @@ function renderActiveModal() {
           </div>
 
           <div style="display:flex; gap:8px;">
-            <button class="btn-primary" style="flex:1; padding:11px;" onclick="closeModal(); switchTab('collect'); onStudentSelectForCollect(${fin.student.id});">
+            <button class="btn-primary" style="flex:1; padding:10px;" onclick="closeModal(); switchTab('collect'); onStudentSelectForCollect(${fin.student.id});">
               💳 Collect Fee
             </button>
-            <button class="btn-secondary" style="border-color:var(--status-overdue-text); color:var(--status-overdue-text); padding:11px;" onclick="handleDeleteStudent(${fin.student.id})">
+            <button class="btn-secondary" style="border-color:var(--status-overdue-text); color:var(--status-overdue-text); padding:10px;" onclick="handleDeleteStudent(${fin.student.id})">
               🗑️ Delete
             </button>
           </div>
@@ -775,7 +779,9 @@ window.handleAddStudentSubmit = function(event) {
     gender: form.gender.value,
     class: form.class.value,
     monthly_fee: form.monthly_fee.value,
-    joining_date: form.joining_date.value
+    joining_date: form.joining_date.value,
+    school: form.school ? form.school.value : '',
+    board: form.board ? form.board.value : ''
   });
   closeModal();
   renderCurrentTab();
@@ -789,16 +795,24 @@ window.handleEditStudentSubmit = function(event) {
     gender: form.gender.value,
     class: form.class.value,
     monthly_fee: form.monthly_fee.value,
-    joining_date: form.joining_date.value
+    joining_date: form.joining_date.value,
+    school: form.school ? form.school.value : '',
+    board: form.board ? form.board.value : ''
   });
   closeModal();
   renderCurrentTab();
 };
 
+// Delete Student with Warning Confirmation Alert
 window.handleDeleteStudent = function(studentId) {
   const student = db.getStudentById(studentId);
   if (!student) return;
-  if (confirm(`Are you sure you want to delete student "${student.name}"? All payment records will be permanently removed.`)) {
+  
+  const confirmWarning = confirm(
+    `⚠️ WARNING: Are you sure you want to permanently delete student "${student.name}" (${student.class})?\n\nThis action CANNOT be undone and all fee history records for this student will be permanently erased.`
+  );
+
+  if (confirmWarning) {
     db.deleteStudent(studentId);
     closeModal();
     renderCurrentTab();
