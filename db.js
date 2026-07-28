@@ -438,7 +438,7 @@ class DBService {
     return true;
   }
 
-  // --- SMART FINANCIAL ENGINE: 1-Month Cycle Grace Period for New Students ---
+  // --- REFINED COACHING FINANCIAL ENGINE: ACCURATE MONTHLY CYCLE RENEWAL DATES ---
   calculateStudentFinancials(studentId, referenceDate = new Date()) {
     const student = this.getStudentById(studentId);
     if (!student) return null;
@@ -453,8 +453,14 @@ class DBService {
     const refYear = referenceDate.getFullYear();
     const refMonthIdx = referenceDate.getMonth();
     const refDay = referenceDate.getDate();
-
     const joiningDay = joiningDate.getDate();
+
+    // Total tuition fee paid by student
+    const totalPaidPool = payments.reduce((sum, p) => sum + Number(p.paid_amount || 0), 0);
+    const fullMonthsPaidCount = Math.floor(totalPaidPool / student.monthly_fee);
+
+    // Calculate Next Renewal Date & Active Cycle Paid Until String
+    const cycleInfo = this.calculateCyclePaidUntilDate(student.joining_date, fullMonthsPaidCount);
 
     // Calculate completed 1-month billing cycles
     // A 1-month cycle completes ONLY when reference date passes joiningDay of the subsequent month!
@@ -484,31 +490,30 @@ class DBService {
       }
     }
 
-    // Past completed cycles fee requirement vs Active ongoing cycle fee requirement
+    // Requirements
     const pastCompletedFeeRequirement = completedCyclesCount * student.monthly_fee;
     const activeCycleFeeRequirement = (completedCyclesCount + 1) * student.monthly_fee;
-
-    const totalPaidPool = payments.reduce((sum, p) => sum + Number(p.paid_amount || 0), 0);
 
     const advanceBalance = Math.max(0, totalPaidPool - activeCycleFeeRequirement);
     let totalCurrentDue = 0;
     let dueStatus = 'UPCOMING';
 
+    // Current Reference Date vs Renewal Date Check
+    const renewalObj = cycleInfo.renewalDateObj;
+    const isPastRenewalDate = referenceDate >= renewalObj;
+
     if (totalPaidPool >= activeCycleFeeRequirement) {
       dueStatus = 'PAID';
       totalCurrentDue = 0;
-    } else if (totalPaidPool >= pastCompletedFeeRequirement) {
-      // Student has paid for all COMPLETED past cycles! Currently inside active 1-month grace cycle!
-      dueStatus = (refDay === joiningDay) ? 'DUE TODAY' : 'UPCOMING';
-      totalCurrentDue = activeCycleFeeRequirement - totalPaidPool;
+    } else if (totalPaidPool >= pastCompletedFeeRequirement && !isPastRenewalDate) {
+      // Student is inside their active 1-month grace cycle (before next renewal date)!
+      dueStatus = (refDay === joiningDay && totalPaidPool === 0) ? 'DUE TODAY' : 'UPCOMING';
+      totalCurrentDue = student.monthly_fee - (totalPaidPool % student.monthly_fee);
     } else {
-      // Student has unpaid COMPLETED past cycles -> OVERDUE (Pending Dues)!
+      // Past renewal date has passed and unpaid -> OVERDUE (Pending Dues)!
       dueStatus = 'OVERDUE';
       totalCurrentDue = activeCycleFeeRequirement - totalPaidPool;
     }
-
-    const fullMonthsPaidCount = Math.floor(totalPaidPool / student.monthly_fee);
-    const cycleInfo = this.calculateCyclePaidUntilDate(student.joining_date, fullMonthsPaidCount);
 
     let remainingPaidPool = totalPaidPool;
     const monthDetails = [];
@@ -576,26 +581,38 @@ class DBService {
     };
   }
 
+  // --- MATHEMATICALLY ACCURATE RENEWAL DATE CALCULATION ---
   calculateCyclePaidUntilDate(joiningDateStr, monthsPaid) {
-    if (!joiningDateStr) return { paidUntilStr: '', renewalStr: '' };
+    if (!joiningDateStr) return { paidUntilStr: '', renewalStr: '', renewalDateObj: new Date() };
+
     const j = new Date(joiningDateStr);
-    let y = j.getFullYear();
-    let m = j.getMonth() + monthsPaid;
-    while (m > 11) {
-      m -= 12;
-      y += 1;
+    const joiningDay = j.getDate();
+
+    // Next Renewal Date is ALWAYS: joining_date + (monthsPaid + 1) months!
+    let renewalYear = j.getFullYear();
+    let renewalMonthIdx = j.getMonth() + (monthsPaid + 1);
+
+    while (renewalMonthIdx > 11) {
+      renewalMonthIdx -= 12;
+      renewalYear += 1;
     }
-    const day = j.getDate();
 
-    const maxDays = new Date(y, m + 1, 0).getDate();
-    const renewalDay = Math.min(day, maxDays);
+    const maxDaysInRenewalMonth = new Date(renewalYear, renewalMonthIdx + 1, 0).getDate();
+    const renewalDay = Math.min(joiningDay, maxDaysInRenewalMonth);
+    const renewalDate = new Date(renewalYear, renewalMonthIdx, renewalDay);
 
-    const renewalDate = new Date(y, m, renewalDay);
-    const paidUntilDate = new Date(renewalDate.getTime() - 86400000);
+    let paidUntilStr = '';
+    if (monthsPaid <= 0) {
+      paidUntilStr = 'Unpaid (Active Cycle)';
+    } else {
+      const paidUntilDate = new Date(renewalDate.getTime() - 86400000);
+      paidUntilStr = this.formatDisplayDate(paidUntilDate.toISOString());
+    }
 
     return {
-      paidUntilStr: this.formatDisplayDate(paidUntilDate.toISOString()),
-      renewalStr: this.formatDisplayDate(renewalDate.toISOString())
+      paidUntilStr,
+      renewalStr: this.formatDisplayDate(renewalDate.toISOString()),
+      renewalDateObj: renewalDate
     };
   }
 

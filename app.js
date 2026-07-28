@@ -484,7 +484,7 @@ function renderStudentCardListHTML(students) {
           </div>
         </div>
         <div style="text-align:right;">
-          ${renderStatusBadge(fin.dueStatus, fin.totalCurrentDue)}
+          ${renderStatusBadge(fin.dueStatus, fin.totalCurrentDue, fin.cycleNextRenewal)}
           ${fin.unpaidKhataTotal > 0 ? `
             <div style="font-size:9px; color:#DC2626; font-weight:800; margin-top:3px; background:rgba(220,38,38,0.1); padding:2px 6px; border-radius:6px; border:1px solid rgba(220,38,38,0.3); display:inline-block;">
               🔴 Khata: ₹${fin.unpaidKhataTotal}
@@ -510,7 +510,7 @@ window.onStudentSearchKeyDown = function(e) {
   }
 };
 
-function renderStatusBadge(status, dueAmount) {
+function renderStatusBadge(status, dueAmount, renewalDateStr) {
   if (status === 'PAID') {
     return `<span class="badge badge-paid">PAID</span>`;
   } else if (status === 'OVERDUE') {
@@ -518,7 +518,7 @@ function renderStatusBadge(status, dueAmount) {
   } else if (status === 'DUE TODAY') {
     return `<span class="badge badge-due">DUE TODAY ₹${dueAmount}</span>`;
   } else {
-    return `<span class="badge badge-upcoming">UPCOMING ₹${dueAmount}</span>`;
+    return `<span class="badge badge-upcoming">ACTIVE (Due ${renewalDateStr || ''})</span>`;
   }
 }
 
@@ -558,11 +558,11 @@ function renderCollectFeesView(students) {
               <div style="font-weight:700; font-size:12px;">₹${fin.student.monthly_fee}</div>
             </div>
             <div>
-              <span style="font-size:9px; color:var(--emerald-600);">Arrears:</span>
-              <div style="font-weight:700; font-size:12px; color:var(--status-overdue-text);">₹${fin.currentArrears}</div>
+              <span style="font-size:9px; color:var(--emerald-600);">Next Dues Renewal:</span>
+              <div style="font-weight:700; font-size:11px; color:#254B33;">${fin.cycleNextRenewal}</div>
             </div>
             <div style="grid-column: span 2; margin-top:2px;">
-              <span style="font-size:9px; color:var(--emerald-600);">Total Fee Payable:</span>
+              <span style="font-size:9px; color:var(--emerald-600);">Fee Amount Payable:</span>
               <div style="font-size:16px; font-weight:800; color:var(--emerald-950);">₹${fin.totalCurrentDue}</div>
             </div>
           </div>
@@ -1244,7 +1244,7 @@ function renderActiveModal() {
                     </div>
                   </div>
                   <div style="text-align:right;">
-                    ${renderStatusBadge(fin.dueStatus, fin.totalCurrentDue)}
+                    ${renderStatusBadge(fin.dueStatus, fin.totalCurrentDue, fin.cycleNextRenewal)}
                   </div>
                 </div>
               `;
@@ -1261,12 +1261,13 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 6: Student Profile Drawer (Khatabook Udhaar Red Ledger & Void Payment Button - ALWAYS NEWEST FIRST AT TOP!)
+  // Modal 6: Student Profile Drawer (Accurate Coaching Cycle Renewal Dates)
   else if (activeModal === 'student-profile' && profileStudentId) {
     const fin = db.calculateStudentFinancials(profileStudentId);
     if (!fin) return;
     const avatar = fin.student.gender === 'Female' ? '👧' : '👦';
     const isLeft = fin.student.status === 'Left';
+    const isOverdue = fin.dueStatus === 'OVERDUE';
     // ALWAYS FETCH STUDENT PAYMENTS NEWEST-FIRST AT TOP!
     const studentPayments = db.getPaymentsByStudent(profileStudentId);
 
@@ -1290,15 +1291,15 @@ function renderActiveModal() {
           </div>
 
           <!-- Total Dues Card -->
-          <div class="formula-box" style="margin-top:4px; margin-bottom:8px; ${isLeft && fin.totalCurrentDue > 0 ? 'background:rgba(254,242,242,0.95); border-left-color:#DC2626;' : ''}">
+          <div class="formula-box" style="margin-top:4px; margin-bottom:8px; ${isOverdue ? 'background:rgba(254,242,242,0.95); border-left-color:#DC2626;' : ''}">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <div>
-                <span style="font-size:10px; color:var(--emerald-600);">Monthly Fee: ₹${fin.student.monthly_fee} • Joined: ${fin.student.joining_date}</span>
-                <div style="font-size:15px; font-weight:800; color:${isLeft && fin.totalCurrentDue > 0 ? '#DC2626' : 'var(--emerald-950)'};">
-                  ${isLeft ? 'Outstanding Left Tuition Dues' : 'Total Tuition Fee Dues'}
+                <span style="font-size:10px; color:var(--emerald-600);">Monthly Fee: ₹${fin.student.monthly_fee} • Joined: ${db.formatDisplayDate(fin.student.joining_date)}</span>
+                <div style="font-size:14px; font-weight:800; color:${isOverdue ? '#DC2626' : 'var(--emerald-950)'};">
+                  ${isLeft ? 'Outstanding Left Tuition Dues' : isOverdue ? '🔴 Overdue Pending Tuition Dues' : 'Current Active Month Fee'}
                 </div>
               </div>
-              <div style="font-size:20px; font-weight:800; color:${fin.totalCurrentDue === 0 ? '#254B33' : 'var(--status-overdue-text)'};">₹${fin.totalCurrentDue}</div>
+              <div style="font-size:20px; font-weight:800; color:${isOverdue ? '#DC2626' : fin.totalCurrentDue === 0 ? '#254B33' : 'var(--emerald-950)'};">₹${fin.totalCurrentDue}</div>
             </div>
 
             ${fin.advanceBalance > 0 ? `
@@ -1313,11 +1314,11 @@ function renderActiveModal() {
           <div style="padding:8px 10px; background:var(--emerald-50); border:1px solid var(--card-border); border-radius:12px; margin-bottom:10px; font-size:10px; display:grid; grid-template-columns:1fr 1fr; gap:6px;">
             <div>
               <span style="color:var(--emerald-600); font-weight:700;">🗓️ Active Cycle Paid Until:</span>
-              <div style="font-weight:800; color:var(--emerald-950); font-size:11px;">${fin.cyclePaidUntil || 'None (Unpaid)'}</div>
+              <div style="font-weight:800; color:var(--emerald-950); font-size:11px;">${fin.cyclePaidUntil || 'Unpaid (Active Cycle)'}</div>
             </div>
             <div>
               <span style="color:var(--emerald-600); font-weight:700;">⏳ Next Dues Renewal Date:</span>
-              <div style="font-weight:800; color:#DC2626; font-size:11px;">${fin.cycleNextRenewal || 'Immediate'}</div>
+              <div style="font-weight:800; color:${isOverdue ? '#DC2626' : '#254B33'}; font-size:11px;">${fin.cycleNextRenewal}</div>
             </div>
           </div>
 
@@ -1369,7 +1370,9 @@ function renderActiveModal() {
                 <div>
                   ${bm.isPaid ? 
                     `<span class="badge badge-paid">✓ PAID</span>` : 
-                    `<span class="badge badge-overdue">🔴 PENDING ₹${bm.remainingBalance}</span>`
+                    isOverdue ? 
+                    `<span class="badge badge-overdue">🔴 PENDING ₹${bm.remainingBalance}</span>` : 
+                    `<span class="badge badge-upcoming" style="font-size:8px;">🟢 ACTIVE CYCLE (Due ${fin.cycleNextRenewal})</span>`
                   }
                 </div>
               </div>
@@ -1389,8 +1392,8 @@ function renderActiveModal() {
                   </div>
                 </div>
                 <div style="display:flex; gap:4px;">
-                  <button class="btn-secondary" style="padding:3px 6px; font-size:9px;" onclick="openModal('receipt', ${p.id})">🧾 Receipt</button>
-                  <button class="btn-secondary" style="padding:3px 6px; font-size:9px; color:#DC2626; border-color:rgba(220,38,38,0.3);" onclick="handleVoidPayment(${p.id})">↩️ Void</button>
+                  <button class="btn-secondary" style="padding:3px 6px; font-size:9px;" onclick="openModal('receipt', ${p.id})">Receipt</button>
+                  <button class="btn-secondary" style="padding:3px 6px; font-size:9px; color:#DC2626; border-color:rgba(220,38,38,0.3);" onclick="handleVoidPayment(${p.id})">Void</button>
                 </div>
               </div>
             `).join('') : `
@@ -1443,7 +1446,7 @@ function renderActiveModal() {
                     </div>
                   </div>
                   <div style="text-align:right;">
-                    ${renderStatusBadge(fin.dueStatus, fin.totalCurrentDue)}
+                    ${renderStatusBadge(fin.dueStatus, fin.totalCurrentDue, fin.cycleNextRenewal)}
                   </div>
                 </div>
               `;
