@@ -279,18 +279,24 @@ html, body {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
+/* Ultra Luxury Live Header Date Badge */
 .live-date-header-badge {
-  background: var(--emerald-800);
+  background: var(--vip-gradient-primary);
   color: #FFFFFF;
-  padding: 2px 7px;
+  padding: 3px 9px;
   border-radius: var(--radius-pill);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 800;
-  letter-spacing: 0.3px;
-  box-shadow: 0 2px 8px rgba(37, 75, 51, 0.3);
+  letter-spacing: 0.4px;
+  box-shadow: 0 4px 12px rgba(6, 39, 26, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
 }
 
 /* Custom In-App Select Trigger Button */
