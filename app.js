@@ -532,6 +532,7 @@ function renderCollectFeesView(students) {
   const currentMonthName = MONTH_NAMES[now.getMonth()];
   const currentYear = now.getFullYear();
 
+  // ALWAYS GET RECENT PAYMENTS NEWEST-FIRST AT TOP!
   const recentPayments = db.getRecentPayments(6);
 
   return `
@@ -604,7 +605,7 @@ function renderCollectFeesView(students) {
       ` : ''}
     </div>
 
-    <!-- Recent Payment Receipts Log Section -->
+    <!-- Recent Payment Receipts Log Section (ALWAYS NEWEST FIRST ON TOP!) -->
     <div class="glass-card">
       <h3 style="font-size:13px; font-weight:800; color:var(--emerald-950); margin-bottom:8px;">Recent Payment Receipts 🧾</h3>
       <div style="max-height:220px; overflow-y:auto;">
@@ -678,6 +679,8 @@ window.handleFeeCollection = function(event) {
     payment_date: new Date().toISOString()
   });
 
+  renderCurrentTab(); // Instant re-render so background list updates newest-first at top!
+
   receiptData = {
     payment,
     student: fin.student,
@@ -706,10 +709,11 @@ function renderCalendarView(students) {
   const studentMap = {};
   students.forEach(s => { studentMap[s.id] = s; });
 
+  // SORT DAILY PAYMENTS NEWEST-FIRST AT VERY TOP!
   const dailyPayments = allPayments.filter(p => {
     const pDate = new Date(p.payment_date || p.created_at);
     return (pDate.getFullYear() === calendarViewYear && pDate.getMonth() === calendarViewMonthIdx && pDate.getDate() === selectedDay);
-  }).map(p => ({
+  }).sort((a, b) => (b.id || 0) - (a.id || 0)).map(p => ({
     ...p,
     student: studentMap[p.student_id] || { name: 'Student', class: '' }
   }));
@@ -774,7 +778,7 @@ function renderCalendarView(students) {
       </div>
     </div>
 
-    <!-- PANEL 2: Daily Fee Collection Register Log -->
+    <!-- PANEL 2: Daily Fee Collection Register Log (ALWAYS NEWEST FIRST AT TOP!) -->
     <div class="glass-card">
       <h4 style="font-size:12px; font-weight:800; color:var(--emerald-950); margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
         <span>💵 Fee Collection Register Log (${currentMonthName} ${selectedDay})</span>
@@ -1257,12 +1261,13 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 6: Student Profile Drawer (Khatabook Udhaar Red Ledger & Void Payment Button)
+  // Modal 6: Student Profile Drawer (Khatabook Udhaar Red Ledger & Void Payment Button - ALWAYS NEWEST FIRST AT TOP!)
   else if (activeModal === 'student-profile' && profileStudentId) {
     const fin = db.calculateStudentFinancials(profileStudentId);
     if (!fin) return;
     const avatar = fin.student.gender === 'Female' ? '👧' : '👦';
     const isLeft = fin.student.status === 'Left';
+    // ALWAYS FETCH STUDENT PAYMENTS NEWEST-FIRST AT TOP!
     const studentPayments = db.getPaymentsByStudent(profileStudentId);
 
     container.innerHTML = `
@@ -1371,7 +1376,7 @@ function renderActiveModal() {
             `).join('')}
           </div>
 
-          <!-- Section B: Payment Transaction & Digital Receipt History + Void Button -->
+          <!-- Section B: Payment Transaction & Digital Receipt History (ALWAYS NEWEST FIRST AT TOP!) -->
           <h4 style="font-size:11px; font-weight:800; color:var(--emerald-800); margin-bottom:6px;">Payment Receipts & Transaction Log 🧾</h4>
           <div style="max-height:110px; overflow-y:auto; margin-bottom:12px;">
             ${studentPayments.length > 0 ? studentPayments.map(p => `

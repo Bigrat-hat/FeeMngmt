@@ -281,7 +281,9 @@ class DBService {
 
   getExtraChargesByStudent(studentId) {
     const charges = this.getExtraCharges();
-    return charges.filter(c => c.student_id === Number(studentId));
+    const studentCharges = charges.filter(c => c.student_id === Number(studentId));
+    // Sort newest extra charges first!
+    return studentCharges.sort((a, b) => (b.id || 0) - (a.id || 0));
   }
 
   addExtraCharge({ student_id, item_name, amount, added_date }) {
@@ -338,7 +340,7 @@ class DBService {
     return true;
   }
 
-  // --- Payments, Receipts & Mistaken Payment Cancellation / Reversal ---
+  // --- Payments, Receipts & Mistaken Payment Cancellation (ALWAYS NEWEST FIRST AT TOP!) ---
   getPayments() {
     return JSON.parse(localStorage.getItem(STORAGE_KEYS.PAYMENTS) || '[]');
   }
@@ -350,7 +352,16 @@ class DBService {
 
   getPaymentsByStudent(studentId) {
     const payments = this.getPayments();
-    return payments.filter(p => p.student_id === Number(studentId));
+    const studentPmts = payments.filter(p => p.student_id === Number(studentId));
+    // ALWAYS SORT NEWEST FIRST (TOP POSITION) BY ID & DATE!
+    return studentPmts.sort((a, b) => {
+      const idA = a.id || 0;
+      const idB = b.id || 0;
+      if (idA !== idB) return idB - idA;
+      const dateA = new Date(a.payment_date || a.created_at || 0);
+      const dateB = new Date(b.payment_date || b.created_at || 0);
+      return dateB - dateA;
+    });
   }
 
   getRecentPayments(limit = 10) {
@@ -359,7 +370,11 @@ class DBService {
     const studentMap = {};
     students.forEach(s => { studentMap[s.id] = s; });
 
+    // ALWAYS SORT NEWEST FIRST (TOP POSITION) BY ID & DATE!
     const sorted = [...payments].sort((a, b) => {
+      const idA = a.id || 0;
+      const idB = b.id || 0;
+      if (idA !== idB) return idB - idA;
       const dateA = new Date(a.payment_date || a.created_at || 0);
       const dateB = new Date(b.payment_date || b.created_at || 0);
       return dateB - dateA;
