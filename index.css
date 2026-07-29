@@ -335,6 +335,9 @@ html, body {
   font-weight: 700;
   color: var(--emerald-950);
   cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
   transition: var(--transition-smooth);
 }
 

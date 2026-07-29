@@ -41,6 +41,25 @@ function getTodayLocalISOString() {
   return `${year}-${month}-${day}`;
 }
 
+// Seamless In-App Chip Selection Handler (Instantaneous state update & DOM active class toggle without re-rendering form inputs!)
+window.selectChipOption = function(groupName, value, buttonEl) {
+  if (groupName === 'gender') {
+    formGenderState = value;
+  } else if (groupName === 'class') {
+    formClassState = value;
+  } else if (groupName === 'board') {
+    formBoardState = value;
+  } else if (groupName === 'status') {
+    formStatusState = value;
+  }
+
+  if (buttonEl && buttonEl.parentElement) {
+    const siblings = buttonEl.parentElement.querySelectorAll('.chip-btn');
+    siblings.forEach(btn => btn.classList.remove('active'));
+    buttonEl.classList.add('active');
+  }
+};
+
 // Initialize Application, PWA Service Worker, Splash Screen, Back Button Lock & Real-Time Midnight Clock
 document.addEventListener('DOMContentLoaded', () => {
   initSplashScreenHandler();
@@ -1064,7 +1083,7 @@ function renderActiveModal() {
     `;
   }
 
-  // Modal 1: Add Student (Joining Date ALWAYS Defaults to Today's Live Date!)
+  // Modal 1: Add Student (Instant 0ms Seamless Chip Options Selection!)
   else if (activeModal === 'add-student') {
     const todayDateStr = getTodayLocalISOString();
 
@@ -1084,8 +1103,8 @@ function renderActiveModal() {
             <div class="form-group">
               <label class="form-label">Gender *</label>
               <div class="chip-group">
-                <button type="button" class="chip-btn ${formGenderState === 'Male' ? 'active' : ''}" onclick="formGenderState='Male'; openModal('add-student');">Male 👦</button>
-                <button type="button" class="chip-btn ${formGenderState === 'Female' ? 'active' : ''}" onclick="formGenderState='Female'; openModal('add-student');">Female 👧</button>
+                <button type="button" class="chip-btn ${formGenderState === 'Male' ? 'active' : ''}" onclick="selectChipOption('gender', 'Male', this)">Male 👦</button>
+                <button type="button" class="chip-btn ${formGenderState === 'Female' ? 'active' : ''}" onclick="selectChipOption('gender', 'Female', this)">Female 👧</button>
               </div>
             </div>
 
@@ -1093,7 +1112,7 @@ function renderActiveModal() {
               <label class="form-label">Class (1st to 10th) *</label>
               <div class="chip-group">
                 ${[1,2,3,4,5,6,7,8,9,10].map(c => `
-                  <button type="button" class="chip-btn ${formClassState === 'Class ' + c ? 'active' : ''}" onclick="formClassState='Class ${c}'; openModal('add-student');">Class ${c}</button>
+                  <button type="button" class="chip-btn ${formClassState === 'Class ' + c ? 'active' : ''}" onclick="selectChipOption('class', 'Class ${c}', this)">Class ${c}</button>
                 `).join('')}
               </div>
             </div>
@@ -1113,7 +1132,7 @@ function renderActiveModal() {
               <label class="form-label">Board *</label>
               <div class="chip-group">
                 ${['CBSE', 'State Board', 'ICSE', 'Other'].map(b => `
-                  <button type="button" class="chip-btn ${formBoardState === b ? 'active' : ''}" onclick="formBoardState='${b}'; openModal('add-student');">${b === 'State Board' ? 'State / MP Board' : b}</button>
+                  <button type="button" class="chip-btn ${formBoardState === b ? 'active' : ''}" onclick="selectChipOption('board', '${b}', this)">${b === 'State Board' ? 'State / MP Board' : b}</button>
                 `).join('')}
               </div>
             </div>
@@ -1252,8 +1271,8 @@ function renderActiveModal() {
             <div class="form-group">
               <label class="form-label">Gender *</label>
               <div class="chip-group">
-                <button type="button" class="chip-btn ${formGenderState === 'Male' ? 'active' : ''}" onclick="formGenderState='Male'; openModal('edit-student', ${student.id});">Male 👦</button>
-                <button type="button" class="chip-btn ${formGenderState === 'Female' ? 'active' : ''}" onclick="formGenderState='Female'; openModal('edit-student', ${student.id});">Female 👧</button>
+                <button type="button" class="chip-btn ${formGenderState === 'Male' ? 'active' : ''}" onclick="selectChipOption('gender', 'Male', this)">Male 👦</button>
+                <button type="button" class="chip-btn ${formGenderState === 'Female' ? 'active' : ''}" onclick="selectChipOption('gender', 'Female', this)">Female 👧</button>
               </div>
             </div>
 
@@ -1261,7 +1280,7 @@ function renderActiveModal() {
               <label class="form-label">Class *</label>
               <div class="chip-group">
                 ${[1,2,3,4,5,6,7,8,9,10].map(c => `
-                  <button type="button" class="chip-btn ${formClassState === 'Class ' + c ? 'active' : ''}" onclick="formClassState='Class ${c}'; openModal('edit-student', ${student.id});">Class ${c}</button>
+                  <button type="button" class="chip-btn ${formClassState === 'Class ' + c ? 'active' : ''}" onclick="selectChipOption('class', 'Class ${c}', this)">Class ${c}</button>
                 `).join('')}
               </div>
             </div>
@@ -1281,7 +1300,7 @@ function renderActiveModal() {
               <label class="form-label">Enrollment Status *</label>
               <div class="chip-group">
                 ${['Active', 'Left', 'Session Closed'].map(st => `
-                  <button type="button" class="chip-btn ${formStatusState === st ? 'active' : ''}" onclick="formStatusState='${st}'; openModal('edit-student', ${student.id});">${st}</button>
+                  <button type="button" class="chip-btn ${formStatusState === st ? 'active' : ''}" onclick="selectChipOption('status', '${st}', this)">${st}</button>
                 `).join('')}
               </div>
             </div>
@@ -1290,7 +1309,7 @@ function renderActiveModal() {
               <label class="form-label">Board *</label>
               <div class="chip-group">
                 ${['CBSE', 'State Board', 'ICSE', 'Other'].map(b => `
-                  <button type="button" class="chip-btn ${formBoardState === b ? 'active' : ''}" onclick="formBoardState='${b}'; openModal('edit-student', ${student.id});">${b === 'State Board' ? 'State / MP Board' : b}</button>
+                  <button type="button" class="chip-btn ${formBoardState === b ? 'active' : ''}" onclick="selectChipOption('board', '${b}', this)">${b === 'State Board' ? 'State / MP Board' : b}</button>
                 `).join('')}
               </div>
             </div>
